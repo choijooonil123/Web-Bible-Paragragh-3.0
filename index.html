@@ -1068,8 +1068,8 @@ footer{border-top:1px solid var(--border);border-bottom:none}
 main{padding:0 12px 12px}
 
 input[type="text"].title-input{
-  width:80%;              /* 폭은 그대로 (원하면 70~90%로 조정 가능) */
-  max-width:600px;
+  width:50%;               /* 폭: 필요시 조절 가능 (70~90%) */
+  max-width:500px;
   background:#161922;
   color:#e6e8ef;
   border:1px solid #2a3040;
@@ -1081,10 +1081,11 @@ input[type="text"].title-input{
   letter-spacing:0.01em;
   box-shadow:0 3px 8px rgba(0,0,0,.15);
   box-sizing:border-box;
-  margin-left: 12px;       /* ✅ 왼쪽 여백만 약간 */
-  margin-right: 0;         /* ✅ 오른쪽은 0 */
-  text-align: left;        /* ✅ 입력 텍스트도 왼쪽 정렬 */
+  margin: 0;               /* ✅ 모든 여백 제거 */
+  text-align:left;         /* ✅ 텍스트 왼쪽 정렬 */
+  display:block;           /* ✅ 줄 전체 차지 */
 }
+
 
 
 
