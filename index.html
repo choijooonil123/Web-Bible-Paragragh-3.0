@@ -1067,17 +1067,24 @@ footer{border-top:1px solid var(--border);border-bottom:none}
 .grow{flex:1 1 auto}
 main{padding:0 12px 12px}
 
-/* 큰 제목 입력란(2배) */
 input[type="text"].title-input{
   width:100%;
-  background:#161922;color:#e6e8ef;border:1px solid #2a3040;border-radius:12px;
-  padding:20px;             /* 높이 업 */
-  font-weight:800;
-  font-size:2rem;           /* 글씨 크게 */
-  line-height:1.3;
-  letter-spacing:.01em;
-  box-shadow:0 6px 16px rgba(0,0,0,.18);
+  max-width:900px;              /* 너무 넓지 않게 제한 */
+  margin: 0 auto;
+  display:block;
+  background:#161922;
+  color:#e6e8ef;
+  border:1px solid #2a3040;
+  border-radius:10px;
+  padding:16px 20px;            /* 높이 ↓ */
+  font-weight:700;
+  font-size:1.4rem;             /* 글자크기 ↓ */
+  line-height:1.4;
+  letter-spacing:0.01em;
+  box-shadow:0 4px 10px rgba(0,0,0,.15);
+  box-sizing:border-box;
 }
+
 
 /* 제목 입력란 가시성/중앙 정렬/최대폭 */
 input#t.title-input{
