@@ -1079,6 +1079,31 @@ input[type="text"].title-input{
   box-shadow:0 6px 16px rgba(0,0,0,.18);
 }
 
+/* 제목 입력란 가시성/중앙 정렬/최대폭 */
+input#t.title-input{
+  width:100%;
+  max-width:980px;
+  margin:0 auto;
+  display:block;
+  color:#e6e8ef;          /* 입력 텍스트 보이게 */
+  caret-color:#e6e8ef;
+  box-sizing:border-box;
+}
+
+input#t.title-input::placeholder{
+  color:rgba(230,232,239,.6);
+  opacity:1;              /* Firefox */
+}
+
+/* 크롬 자동완성 시 글자/배경 보정 */
+input#t.title-input:-webkit-autofill,
+input#t.title-input:-webkit-autofill:hover,
+input#t.title-input:-webkit-autofill:focus{
+  -webkit-text-fill-color:#e6e8ef !important;
+  box-shadow:0 0 0 1000px #161922 inset !important;
+  transition: background-color 9999s;
+}
+
 .toolbar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;background:color-mix(in hsl,var(--panel) 85%,black 6%);border:1px solid var(--border);border-radius:10px;padding:6px 8px;margin-top:10px}
 .toolbar .sep{width:1px;height:22px;background:var(--border);margin:0 4px}
 .pill{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);background:color-mix(in hsl,var(--panel) 85%,black 6%);padding:4px 6px;border-radius:8px}
@@ -1126,7 +1151,7 @@ input[type="number"]{width:74px;background:#161922;color:#e6e8ef;border:1px soli
   <button id="x">닫기</button>
 </header>
 <main>
-  <input id="t" class="title-input" placeholder="설교 제목을 입력하세요">
+  <input id="t" class="title-input" type="text" autocomplete="off" placeholder="설교 제목을 입력하세요">
   <div class="toolbar">
     <button id="btnBold"><b>굵게</b></button>
     <button id="btnItalic"><i>기울임</i></button>
@@ -1170,9 +1195,15 @@ input[type="number"]{width:74px;background:#161922;color:#e6e8ef;border:1px soli
     const t=$('t'), b=$('b'), th=$('th'), imgs=$('imgs');
     const refEl=$('ref'), dateEl=$('date'), draftState=$('draftState');
 
+    t.value = meta.title || '';    // ← 제목 입력란에 기존 제목 표시
+    
     refEl.textContent = ' — ' + (meta.ref || '');
     dateEl.textContent = meta.date ? ('최근 저장: ' + meta.date) : '';
 
+    if (typeof d?.title === 'string' && d.title.trim() !== '') {
+      t.value = d.title;
+    }
+    
     // 본문 로드(HTML이면 그대로, 텍스트면 <p>로 변환)
     if (/<\/?[a-z][\s\S]*>/i.test(meta.body||'')) {
       b.innerHTML = meta.body;
