@@ -1271,6 +1271,71 @@ w.addEventListener('load', () => {
     const ns = w.getSelection(); ns && ns.collapseToEnd();
     scheduleDraft();
   }
+
+  // ===== Alt 단축키 (b/i/u/e/c/f) : 설교 편집 본문(#b) 전용 =====
+  (function initEditorHotkeys(){
+    const colorInput = $('color'); // 이미 toolbar에 존재
+
+    function selectionInsideBody(){
+      const sel = w.getSelection();
+      if(!sel || sel.rangeCount===0) return false;
+      const node = sel.getRangeAt(0).commonAncestorContainer;
+      return b.contains(node.nodeType === 3 ? node.parentNode : node);
+    }
+
+    w.addEventListener('keydown', (e) => {
+      // Alt 조합만 허용 (Ctrl/Meta 섞이면 무시)
+      if (!e.altKey || e.ctrlKey || e.metaKey) return;
+
+      // 포커스가 본문(#b) 안이거나, 본문을 편집 중이라고 판단될 때만 동작
+      const active = w.document.activeElement;
+      const isBodyFocused = (active === b) || b.contains(active) || selectionInsideBody();
+      if (!isBodyFocused) return;
+
+      const k = (e.key || '').toLowerCase();
+      if (!['b','i','u','e','c','f'].includes(k)) return;
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      switch(k){
+        case 'b': // 굵게
+          exec('bold');
+          break;
+        case 'i': // 기울임
+          exec('italic');
+          break;
+        case 'u': // 밑줄
+          exec('underline');
+          break;
+        case 'e': // 취소선
+          exec('strikeThrough');
+          break;
+        case 'c': // 글자색 선택기 열기 → 선택 후 즉시 적용
+          if (colorInput) {
+            colorInput.onchange = () => exec('foreColor', colorInput.value || '#ffffff');
+            // 일부 브라우저는 click으로 컬러피커가 안 열릴 수 있어 focus도 함께
+            colorInput.focus();
+            colorInput.click();
+          } else {
+            const hex = w.prompt('적용할 색상 HEX(#RRGGBB) 또는 색 이름:', '#ff6b6b');
+            if (hex) exec('foreColor', hex);
+          }
+          break;
+        case 'f': // 글꼴 크기(px)
+          const val = w.prompt('글꼴 크기(px)를 입력하세요 (예: 18):', '18');
+          const px = parseInt(val, 10);
+          if (!isNaN(px) && px >= 10 && px <= 64) {
+            applyFontSizeToSelection(px);
+          } else if (val !== null) {
+            w.alert('10~64px 범위로 입력하세요.');
+          }
+          break;
+      }
+    }, true);
+  })();
+
+  
   function wrapTextNodes(root, px){
     const walker = w.document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
       acceptNode(n){ return n.nodeValue.trim() ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT; }
