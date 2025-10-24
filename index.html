@@ -1296,22 +1296,7 @@ main{
   background: color-mix(in hsl,var(--panel) 85%,black 6%);
   border-bottom: 1px solid var(--border);
 }
-
-/* ===== 본문 접기/펼치기 기능 ===== */
-.rte.collapsed{
-  display:none;
-}
-/* (선택) 부드러운 애니메이션 버전 */
-.rte{
-  transition:max-height 0.25s ease, opacity 0.25s ease;
-}
-.rte.collapsed{
-  max-height:0;
-  opacity:0;
-  padding:0;
-  margin:0;
-}
-    
+ 
 </style>
 </head>
 <body class="context-editor">
@@ -1343,7 +1328,6 @@ main{
     <span class="muted" id="draftState">자동저장</span>
     <span class="sep"></span>
   </div>
-  <button id="toggleBodyBtn" style="align-self:flex-end;margin:4px 8px;">본문 접기</button>
   <div id="b" class="rte" contenteditable="true" spellcheck="false"></div>
   <div class="thumbs" id="th"></div>
   <input type="file" id="imgs" accept="image/*" multiple style="margin-top:4px">
@@ -1889,15 +1873,6 @@ document.addEventListener('paste', (e) => {
   }
 });
 
-// ===== 본문 접기/펼치기 버튼 기능 =====
-const bodyBox = document.getElementById('b');        // 편집 본문
-const toggleBtn = document.getElementById('toggleBodyBtn'); // 버튼
-
-toggleBtn.addEventListener('click', ()=>{
-  const isCollapsed = bodyBox.classList.toggle('collapsed');
-  toggleBtn.textContent = isCollapsed ? '본문 펼치기' : '본문 접기';
-});
-    
   </script>
 </body>
 </html>
