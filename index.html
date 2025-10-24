@@ -1808,6 +1808,33 @@ w.addEventListener('load', () => {
       document.execCommand('foreColor', false, c);
     });
     
+// ---------- 붙여넣을 때 굵은 글자에 노랑색 자동 적용 ----------
+document.addEventListener('paste', (e) => {
+  // 현재 커서가 contenteditable 편집기 안이 아닐 경우 무시
+  const editor = document.activeElement;
+  if (!editor || !editor.isContentEditable) return;
+
+  e.preventDefault(); // 기본 붙여넣기 막기
+
+  // 클립보드에서 HTML 또는 텍스트 가져오기
+  const pasteHTML =
+    (e.clipboardData || window.clipboardData).getData('text/html') ||
+    (e.clipboardData || window.clipboardData).getData('text/plain');
+
+  if (!pasteHTML) return;
+
+  // <b>, <strong> 태그에 스타일(color + font-weight) 추가
+  const styledHTML = pasteHTML
+    .replace(/<b(.*?)>/gi, `<b style="color:#ffd86b;font-weight:700;"$1>`)
+    .replace(/<strong(.*?)>/gi, `<strong style="color:#ffd86b;font-weight:700;"$1>`);
+
+  // 현재 커서 위치에 HTML 삽입
+  if (document.queryCommandSupported('insertHTML')) {
+    document.execCommand('insertHTML', false, styledHTML);
+  } else {
+    editor.innerHTML += styledHTML;
+  }
+});
 
     
   </script>
