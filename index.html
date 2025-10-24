@@ -203,7 +203,7 @@
   <div id="modalWrap" class="modal-backdrop" aria-hidden="true">
     <div class="modal">
       <div class="head">
-        <strong>단락 설교</strong>
+        <strong id="modalTitle">단락 성경</strong>
         <span class="muted" id="modalRef">—</span>
         <div class="grow"></div>
         <button id="closeModal">닫기</button>
@@ -792,9 +792,12 @@
     function setDocMap(storageKey, obj){ localStorage.setItem(storageKey, JSON.stringify(obj)); }
 
     function openSermonModal(){
+      document.getElementById('modalTitle').textContent = '단락 성경';
       if(!CURRENT.paraId){ const openPara = treeEl.querySelector('details.para[open]'); if(!openPara) return; }
       const para = BIBLE.books[CURRENT.book][CURRENT.chap].paras[CURRENT.paraIdx];
-      modalRef.textContent = `${CURRENT.book} ${CURRENT.chap}장 · ${para.title||para.ref} (${para.ref})`;
+      // 예: 창세기 1장 · 태초(1–5) — 맥락과 주석 기반 설교
+      modalRef.textContent = `${CURRENT.book} ${CURRENT.chap}장 · ${para.title || para.ref} (${para.ref}) — 맥락과 주석 기반 설교`;
+
       renderSermonList();
       sermonEditor.style.display = 'none';
       sermonEditor.classList.add('context-editor');
