@@ -1395,24 +1395,30 @@ w.addEventListener('load', () => {
     im.src=src;
     th.appendChild(im);
 
-// == 도구 접기/펼치기 (팝업) ==
+// == 편집하기 (도구 영역 펼치기) ==
 (function(){
   const wrap = w.document.getElementById('controlsWrap');
   const btn  = w.document.getElementById('toggleControlsBtn');
   if(!wrap || !btn) return;
   const KEY = 'wbps.popup.controls.collapsed';
 
+  // 기본 상태는 "접혀 있음"
+  wrap.classList.add('collapsed');
+  btn.textContent = '편집하기';
+
   // 저장된 상태 복원
-  if(localStorage.getItem(KEY)==='1'){
-    wrap.classList.add('collapsed');
-    btn.textContent = '도구 펼치기';
+  if(localStorage.getItem(KEY)==='0'){
+    wrap.classList.remove('collapsed');
+    btn.textContent = '도구 닫기';
   }
+
   btn.addEventListener('click', ()=>{
     const collapsed = wrap.classList.toggle('collapsed');
-    btn.textContent = collapsed ? '도구 펼치기' : '도구 접기';
+    btn.textContent = collapsed ? '편집하기' : '도구 닫기';
     localStorage.setItem(KEY, collapsed ? '1' : '0');
   });
 })();
+
     
   });
 
