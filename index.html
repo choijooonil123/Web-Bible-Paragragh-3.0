@@ -237,7 +237,7 @@
         <span class="muted" id="modalRef">—</span>
         <div class="grow"></div>
         <button id="closeModal">닫기</button>
-        <button id="modalToggleControlsBtn" style="display:none">도구 접기</button>
+        <button id="modalToggleControlsBtn" style="display:none">편집하기</button>
       </div>
 
       <div class="list" id="sermonList"></div>
@@ -1322,11 +1322,11 @@ main{
 <header>
   <strong>설교 편집</strong><span class="muted" id="ref"></span>
   <div class="grow"></div>
-  <button id="toggleControlsBtn">도구 접기</button>
+  <button id="toggleControlsBtn">편집하기</button>
   <button id="x">닫기</button>
 </header>
 <main>
- <div id="controlsWrap" class="controls-wrap">
+ <div id="controlsWrap" class="controls-wrap collapsed">
   <input id="t" class="title-input" type="text" autocomplete="off" placeholder="설교 제목을 입력하세요">
   <div class="toolbar">
     <button id="btnBold"><b>굵게</b></button>
@@ -1934,14 +1934,19 @@ document.addEventListener('paste', (e) => {
       const para = BIBLE?.books?.[CURRENT.book]?.[CURRENT.chap]?.paras?.[CURRENT.paraIdx];
       const pid  = para ? `${CURRENT.book}|${CURRENT.chap}|${para.ref}` : '';
       const KEY  = `wbps.modal.controls.collapsed:${pid}`;
-      const collapsed = localStorage.getItem(KEY)==='1';
+      
+      const raw = localStorage.getItem(KEY);
+      // 저장값 없으면 기본=접힘(true)
+      const collapsed = (raw === null) ? true : (raw === '1');
       wrap.classList.toggle('collapsed', collapsed);
-      btn.textContent = collapsed ? '도구 펼치기' : '도구 접기';
+      btn.textContent = collapsed ? '편집하기' : '도구 닫기';
+      
       btn.onclick = ()=>{
         const c = wrap.classList.toggle('collapsed');
-        btn.textContent = c ? '도구 펼치기' : '도구 접기';
+        btn.textContent = c ? '편집하기' : '도구 닫기';
         localStorage.setItem(KEY, c ? '1' : '0');
       };
+      
     }
   };
 
