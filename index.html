@@ -941,7 +941,12 @@
       sermonList.innerHTML = '<div class="muted" style="padding:0 14px">새 설교를 작성해 저장하면 이 단락에 붙습니다.</div>';
       sermonEditor.classList.add('context-editor');
       sermonEditor.style.display = '';
-      sermonTitle.value = ''; sermonBody.value = ''; sermonThumbs.innerHTML = ''; sermonImages.value = '';
+
+      sermonTitle.value = '';
+      setBodyHTML('');                     // ← RTE 헬퍼 사용
+      sermonThumbs.innerHTML = '';
+      sermonImages.value = '';
+
       sermonEditor.dataset.editing = '';
       stopEditorSpeak(true);
     }
@@ -949,7 +954,11 @@
       const map = getSermonMap(); const arr = map[CURRENT.paraId] || []; const it = arr[idx]; if(!it) return;
       sermonEditor.classList.add('context-editor');
       sermonEditor.style.display = ''; sermonEditor.dataset.editing = String(idx);
-      sermonTitle.value = it.title||''; sermonBody.value = it.body||''; sermonThumbs.innerHTML = '';
+
+      sermonTitle.value = it.title || '';
+      setBodyHTML(it.body || '');          // ← RTE 헬퍼 사용
+      sermonThumbs.innerHTML = '';
+
       (it.images||[]).forEach(src=>{ const img=new Image(); img.src=src; sermonThumbs.appendChild(img); });
       stopEditorSpeak(true);
     }
@@ -1044,7 +1053,6 @@
     }
 
     /* --------- Editor TTS --------- */
-    const editorSpeakBtn = el('editorSpeak');
     editorSpeakBtn.onclick = ()=> toggleEditorSpeak();
     function toggleEditorSpeak(){
       const tmp = document.createElement('div'); tmp.innerHTML = getBodyHTML();
@@ -1667,59 +1675,6 @@ w.addEventListener('load', () => {
       applyColorImmediateToRTE(hex);
     }
   }, true);
-
-  (function enableModalRTEHotkeys(){
-    const editor = document.getElementById('sermonEditor');
-    const bodyEl = document.getElementById('sermonBody');
-    if (!editor || !bodyEl) return;
-
-    function execFmt(cmd, val=null){
-      document.execCommand(cmd,false,val);
-    }
-    function applyColorImmediateToModal(hex){
-      const sel = window.getSelection();
-      if(!sel || sel.rangeCount===0) return;
-      const range = sel.getRangeAt(0);
-      if(!bodyEl.contains(range.commonAncestorContainer)) return;
-      document.execCommand('foreColor', false, hex);
-    }
-
-    window.addEventListener('keydown', (e)=>{
-      if (modalWrap.getAttribute('aria-hidden') === 'true') return;
-      if (editor.style.display === 'none') return;
-      if (!e.altKey || e.ctrlKey || e.metaKey) return;
-
-      const active = document.activeElement;
-      const inEditor = (active === bodyEl) || bodyEl.contains(active);
-      if (!inEditor) return;
-
-      const k = (e.key || '').toLowerCase();
-      if (!['b','i','u','c','f'].includes(k)) return;
-      e.preventDefault(); e.stopPropagation();
-
-      switch(k){
-        case 'b': execFmt('bold'); break;
-        case 'i': execFmt('italic'); break;
-        case 'u': execFmt('underline'); break;
-        case 'c': {
-          const colorEl = document.getElementById('color');
-          const hex = colorEl ? colorEl.value : '#ffffff';
-          applyColorImmediateToModal(hex);
-          break;
-        }
-        case 'f': {
-          const pxEl = document.getElementById('fontSizePx');
-          const px = pxEl ? parseInt(pxEl.value,10) : 16;
-          if(px && px>=10 && px<=64){
-            document.execCommand('fontSize', false, 7);
-            const fontTags = bodyEl.querySelectorAll('font[size="7"]');
-            fontTags.forEach(ft=>{ ft.removeAttribute('size'); ft.style.fontSize = px+'px'; });
-          }
-          break;
-        }
-      }
-    }, true);
-  })();
 
   // 버튼 클릭 지원 (모달 편집기용)
   document.getElementById('btnBold')?.addEventListener('click', ()=> document.execCommand('bold'));
