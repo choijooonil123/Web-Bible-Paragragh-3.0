@@ -174,6 +174,15 @@
   border-bottom: 1px solid var(--border);
 }
 
+    /* 모달 편집기 도구 접기 */
+#modalControlsWrap{
+  overflow:hidden;
+  transition:max-height .25s ease, opacity .25s ease;
+  max-height:600px; opacity:1;
+}
+#modalControlsWrap.collapsed{ max-height:0; opacity:0 }
+#modalToggleControlsBtn{ min-width:96px }
+
 
   </style>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600&family=Nanum+Myeongjo&display=swap" rel="stylesheet">
@@ -228,14 +237,14 @@
         <span class="muted" id="modalRef">—</span>
         <div class="grow"></div>
         <button id="closeModal">닫기</button>
+        <button id="modalToggleControlsBtn" style="display:none">도구 접기</button>
       </div>
 
       <div class="list" id="sermonList"></div>
 
       <div class="editor" id="sermonEditor" style="display:none">
+       <div id="modalControlsWrap">
         <input type="text" id="sermonTitle" placeholder="제목" />
-
-        <!-- 🔽🔽🔽 추가: RTE 서식 툴바 -->
         <div id="rteToolbar" class="editor-bar" style="gap:6px; flex-wrap:wrap; margin-top:-4px;">
           <button type="button" id="rteBold"><b>굵게</b> (Alt+B)</button>
           <button type="button" id="rteItalic"><i>기울임</i> (Alt+I)</button>
@@ -245,6 +254,7 @@
             <input id="rteColor" type="color" value="#ffffff" style="width:32px;height:28px;padding:0;border-radius:8px">
             <button type="button" id="rteApplyColor">적용 (Alt+C)</button>
           </label>
+         </div>
         </div>
         <!-- 🔼🔼🔼 추가 끝 -->
 
@@ -1296,6 +1306,15 @@ main{
   background: color-mix(in hsl,var(--panel) 85%,black 6%);
   border-bottom: 1px solid var(--border);
 }
+
+/* 도구영역 접기/펼치기 */
+.controls-wrap{
+  overflow:hidden;
+  transition:max-height .25s ease, opacity .25s ease;
+  max-height:600px; opacity:1;
+}
+.controls-wrap.collapsed{ max-height:0; opacity:0 }
+#toggleControlsBtn{ min-width:96px }
  
 </style>
 </head>
@@ -1303,11 +1322,12 @@ main{
 <header>
   <strong>설교 편집</strong><span class="muted" id="ref"></span>
   <div class="grow"></div>
+  <button id="toggleControlsBtn">도구 접기</button>
   <button id="x">닫기</button>
 </header>
 <main>
+ <div id="controlsWrap" class="controls-wrap">
   <input id="t" class="title-input" type="text" autocomplete="off" placeholder="설교 제목을 입력하세요">
-
   <div class="toolbar">
     <button id="btnBold"><b>굵게</b></button>
     <button id="btnItalic"><i>기울임</i></button>
@@ -1328,6 +1348,7 @@ main{
     <span class="muted" id="draftState">자동저장</span>
     <span class="sep"></span>
   </div>
+ </div>
   <div id="b" class="rte" contenteditable="true" spellcheck="false"></div>
   <div class="thumbs" id="th"></div>
   <input type="file" id="imgs" accept="image/*" multiple style="margin-top:4px">
@@ -1373,6 +1394,26 @@ w.addEventListener('load', () => {
     const im=new w.Image();
     im.src=src;
     th.appendChild(im);
+
+// == 도구 접기/펼치기 (팝업) ==
+(function(){
+  const wrap = w.document.getElementById('controlsWrap');
+  const btn  = w.document.getElementById('toggleControlsBtn');
+  if(!wrap || !btn) return;
+  const KEY = 'wbps.popup.controls.collapsed';
+
+  // 저장된 상태 복원
+  if(localStorage.getItem(KEY)==='1'){
+    wrap.classList.add('collapsed');
+    btn.textContent = '도구 펼치기';
+  }
+  btn.addEventListener('click', ()=>{
+    const collapsed = wrap.classList.toggle('collapsed');
+    btn.textContent = collapsed ? '도구 펼치기' : '도구 접기';
+    localStorage.setItem(KEY, collapsed ? '1' : '0');
+  });
+})();
+    
   });
 
   // 🔹 낭독 / 중지
@@ -1872,6 +1913,50 @@ document.addEventListener('paste', (e) => {
     editor.innerHTML += styledHTML;
   }
 });
+
+    // == 모달 편집기 도구 접기/펼치기 ==
+(function(){
+  const btn  = document.getElementById('modalToggleControlsBtn');
+  const wrap = document.getElementById('modalControlsWrap');
+  if(!btn || !wrap) return;
+
+  const showBtnIfEditorVisible = ()=>{
+    const editing = sermonEditor.style.display !== 'none';
+    btn.style.display = editing ? '' : 'none';
+
+    if(editing){
+      const para = BIBLE?.books?.[CURRENT.book]?.[CURRENT.chap]?.paras?.[CURRENT.paraIdx];
+      const pid  = para ? `${CURRENT.book}|${CURRENT.chap}|${para.ref}` : '';
+      const KEY  = `wbps.modal.controls.collapsed:${pid}`;
+      const collapsed = localStorage.getItem(KEY)==='1';
+      wrap.classList.toggle('collapsed', collapsed);
+      btn.textContent = collapsed ? '도구 펼치기' : '도구 접기';
+      btn.onclick = ()=>{
+        const c = wrap.classList.toggle('collapsed');
+        btn.textContent = c ? '도구 펼치기' : '도구 접기';
+        localStorage.setItem(KEY, c ? '1' : '0');
+      };
+    }
+  };
+
+  // 에디터 진입 지점에 후킹
+  const _openSingleDocEditor = openSingleDocEditor;
+  openSingleDocEditor = function(kind){
+    _openSingleDocEditor(kind);
+    setTimeout(showBtnIfEditorVisible, 0);
+  };
+  const _startNewSermon = startNewSermon;
+  startNewSermon = function(){
+    _startNewSermon();
+    setTimeout(showBtnIfEditorVisible, 0);
+  };
+  const _editSermon = editSermon;
+  editSermon = function(idx){
+    _editSermon(idx);
+    setTimeout(showBtnIfEditorVisible, 0);
+  };
+})();
+
 
   </script>
 </body>
