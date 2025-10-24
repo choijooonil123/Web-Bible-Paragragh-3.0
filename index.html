@@ -128,6 +128,32 @@
     /* 모달 본문 RTE 공용 스타일 */
     .rte{min-height:360px;resize:vertical;padding:14px;background:#161922;border:1px solid #2a3040;border-radius:10px;line-height:1.85;letter-spacing:.015em;caret-color:var(--accent);outline:none}
 
+    /* ==== 모달 편집기(sermonEditor) 줄 간격 타이트 모드 ==== */
+    /* 기존 .rte / .context-editor보다 구체적인 선택자로 덮어쓰기 */
+    #sermonEditor.context-editor .rte{
+      line-height: 1.55 !important;   /* 기본 1.85 → 1.55 */
+      letter-spacing: 0.01em !important; /* 살짝 좁게 */
+    }
+
+    /* 문단 간격도 약간 줄이기 */
+    #sermonEditor.context-editor .rte p{
+      margin: 6px 0;                  /* 기본 브라우저 margin(보통 16px) → 6px */
+    }
+
+    /* 성경절 블록은 읽기성 유지하며 약간만 타이트하게 */
+    #sermonEditor.context-editor .rte .verse-line{
+      line-height: 1.5;
+    }
+    #sermonEditor.context-editor .rte .verse-line sup{
+      margin-right: 4px;               /* 절 번호와 본문 간격 확보 */
+    }
+
+    /* 줄바꿈(<br>) 사이 여백 균일화(선택사항) */
+    #sermonEditor.context-editor .rte br{
+      line-height: 1.0;
+    }
+
+
   </style>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600&family=Nanum+Myeongjo&display=swap" rel="stylesheet">
 </head>
@@ -177,7 +203,7 @@
   <div id="modalWrap" class="modal-backdrop" aria-hidden="true">
     <div class="modal">
       <div class="head">
-        <strong>단락 설교</strong>
+        <strong id="modalTitle">단락 성경</strong>
         <span class="muted" id="modalRef">—</span>
         <div class="grow"></div>
         <button id="closeModal">닫기</button>
@@ -187,8 +213,7 @@
 
       <div class="editor" id="sermonEditor" style="display:none">
         <input type="text" id="sermonTitle" placeholder="제목" />
-        <textarea id="sermonBody" placeholder="내용"></textarea>
-      
+
         <!-- 🔽🔽🔽 추가: RTE 서식 툴바 -->
         <div id="rteToolbar" class="editor-bar" style="gap:6px; flex-wrap:wrap; margin-top:-4px;">
           <button type="button" id="rteBold"><b>굵게</b> (Alt+B)</button>
@@ -201,10 +226,10 @@
           </label>
         </div>
         <!-- 🔼🔼🔼 추가 끝 -->
-      
+
         <!-- 🔁 교체: textarea → div[contenteditable] -->
         <div id="sermonBody" class="rte" contenteditable="true" spellcheck="false" placeholder="내용"></div>
-      
+
         <div class="editor-bar">
           <input type="file" id="sermonImages" accept="image/*" multiple />
           <div class="grow"></div>
@@ -324,8 +349,13 @@
     const modalWrap = el('modalWrap'), modalRef = el('modalRef');
     const sermonList = el('sermonList'), sermonEditor = el('sermonEditor');
     const sermonTitle = el('sermonTitle'), sermonBody = el('sermonBody');
-    sermonBody.addEventListener('blur',()=>{sermonBody.value=stripBlankLines(sermonBody.value);});
-    sermonBody.addEventListener('paste',()=>{setTimeout(()=>{sermonBody.value=stripBlankLines(sermonBody.value);},0);});
+    // sermonBody.addEventListener('blur',()=>{sermonBody.value=stripBlankLines(sermonBody.value);});
+    // sermonBody.addEventListener('paste',()=>{setTimeout(()=>{sermonBody.value=stripBlankLines(sermonBody.value);},0);});
+
+    // 개행을 보존해야 하므로 stripBlankLines 제거
+    sermonBody.addEventListener('blur',()=>{}); 
+    sermonBody.addEventListener('paste',()=>{});
+
     const sermonThumbs = el('sermonThumbs'), sermonImages = el('sermonImages');
     const editorSpeakBtn = el('editorSpeak');
     const modalFooterNew = el('modalFooterNew');
@@ -762,9 +792,15 @@
     function setDocMap(storageKey, obj){ localStorage.setItem(storageKey, JSON.stringify(obj)); }
 
     function openSermonModal(){
+      document.getElementById('modalTitle').textContent = '단락 성경';
+        // ★ 설교 모드로 초기화 (맥락/주석/요약 편집 잔여 상태 제거)
+      sermonEditor.dataset.ctxType = '';
+      sermonEditor.dataset.editing = '';
       if(!CURRENT.paraId){ const openPara = treeEl.querySelector('details.para[open]'); if(!openPara) return; }
       const para = BIBLE.books[CURRENT.book][CURRENT.chap].paras[CURRENT.paraIdx];
-      modalRef.textContent = `${CURRENT.book} ${CURRENT.chap}장 · ${para.title||para.ref} (${para.ref})`;
+      // 예: 창세기 1장 · 태초(1–5) — 맥락과 주석 기반 설교
+      modalRef.textContent = `${CURRENT.book} ${CURRENT.chap}장 · ${para.title || para.ref} (${para.ref}) — 맥락과 주석 기반 설교`;
+
       renderSermonList();
       sermonEditor.style.display = 'none';
       sermonEditor.classList.add('context-editor');
@@ -806,7 +842,6 @@
       modalFooterNew.style.display = 'none';
 
       sermonTitle.value = doc.title || '';
-      sermonBody.value  = doc.body  || '';
       setBodyHTML(doc.body || '');
 
       sermonThumbs.innerHTML = '';
@@ -851,12 +886,10 @@
               if(!data || !data.text) throw new Error('AI 응답이 비었습니다.');
 
               // 본문에 주입(덮어쓰기; 기존 내용 보존하려면 아래 줄을 주석 처리하고 append 방식으로 바꾸세요)
-              sermonBody.value = data.text.trim();
-      
               // sermonBody.value = data.text.trim();
 
               setBodyHTML(data.text.trim());
-              
+
               // 👉 이어붙이기를 원하시면 아래 주석 해제하고 위 줄 주석 처리:
               // sermonBody.value = (sermonBody.value.trim() ? sermonBody.value.trim() + '\n\n' : '') + data.text.trim();
 
@@ -900,15 +933,33 @@
       });
     }
 
-    el('newSermonBtn').onclick = ()=>{
-      if (sermonEditor.dataset.ctxType) return;
-      const map = getSermonMap();
-      const arr = map[CURRENT.paraId] || [];
-      arr.unshift({ id: crypto.randomUUID(), title:'', body:'', images:[], date:'' });
-      map[CURRENT.paraId] = arr; setSermonMap(map);
-      modalWrap.style.display='none'; modalWrap.setAttribute('aria-hidden','true');
-      openSermonEditorWindow(0);
-    };
+el('newSermonBtn').onclick = ()=>{
+  // 컨텍스트 편집 상태가 남아 있어도 무시하고 설교 모드로 강제 전환
+  sermonEditor.dataset.ctxType = '';
+
+  // 현재 단락 식별자 보장
+  if (!CURRENT.paraId) {
+    if (!syncCurrentFromOpen()) {
+      alert('단락을 먼저 선택하세요.');
+      return;
+    }
+    const para = BIBLE.books[CURRENT.book][CURRENT.chap].paras[CURRENT.paraIdx];
+    CURRENT.paraId = `${CURRENT.book}|${CURRENT.chap}|${para.ref}`;
+  }
+
+  // 새 설교 항목 추가
+  const map = getSermonMap();
+  const arr = map[CURRENT.paraId] || [];
+  const newId = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()));
+  arr.unshift({ id: newId, title:'', body:'', images:[], date:'' });
+  map[CURRENT.paraId] = arr;
+  setSermonMap(map);
+
+  // 모달 닫고 첫 항목 편집 팝업 열기
+  modalWrap.style.display='none';
+  modalWrap.setAttribute('aria-hidden','true');
+  openSermonEditorWindow(0);
+};
 
     function startNewSermon(){
       sermonList.innerHTML = '<div class="muted" style="padding:0 14px">새 설교를 작성해 저장하면 이 단락에 붙습니다.</div>';
@@ -945,11 +996,13 @@
     el('saveSermon').onclick = ()=>{
       sermonBody.value=stripBlankLines(sermonBody.value);
       const title = sermonTitle.value.trim() || '(제목 없음)';
-      const body  = sermonBody.value.trim();
       // const body  = sermonBody.value.trim();
 
-      const body  = (getBodyHTML() || '').trim();
-      
+      // 개행, <br> 보존 버전
+      let body = getBodyHTML() || '';
+      // 필요 시 앞뒤 공백만 제거하되 내부 개행은 유지
+      body = body.replace(/^\s+|\s+$/g, '');
+
       const imgs  = [...sermonThumbs.querySelectorAll('img')].map(img=>img.src);
       const now   = new Date();
       const date  = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
@@ -993,7 +1046,7 @@
     function isRTE(){ return sermonBody && sermonBody.getAttribute('contenteditable') === 'true'; }
     function getBodyHTML(){ return isRTE() ? sermonBody.innerHTML : (sermonBody.value || ''); }
     function setBodyHTML(html){ if(isRTE()) sermonBody.innerHTML = html || ''; else sermonBody.value = html || ''; }
-    
+
     // 선택 영역에 색 즉시 적용 (선택 없으면 caret에 span 삽입)
     function applyColorImmediateToRTE(hex){
       if(!isRTE()) return;
@@ -1001,7 +1054,7 @@
       if(!sel || sel.rangeCount===0){ sermonBody.focus(); return; }
       const range = sel.getRangeAt(0);
       if(!sermonBody.contains(range.commonAncestorContainer)){ sermonBody.focus(); return; }
-    
+
       if(range.collapsed){
         const sp = document.createElement('span');
         sp.style.color = hex;
@@ -1022,18 +1075,16 @@
       }
     }
 
-    
+
     /* --------- Editor TTS --------- */
     editorSpeakBtn.onclick = ()=> toggleEditorSpeak();
     function toggleEditorSpeak(){
-      sermonBody.value=stripBlankLines(sermonBody.value);
       const tmp = document.createElement('div'); tmp.innerHTML = getBodyHTML();
       tmp.querySelectorAll('sup').forEach(s=> s.textContent='['+s.textContent+'] ');
       const plain = (tmp.textContent||'').replace(/\n{2,}/g,' ').replace(/\s+/g,' ').trim();
       const text = [sermonTitle.value.trim(), plain].filter(Boolean).join('. ');
       if(!EDITOR_READER.synth) return alert('이 브라우저는 음성합성을 지원하지 않습니다.');
       if(EDITOR_READER.playing){ stopEditorSpeak(); return; }
-      const text = [sermonTitle.value.trim(), sermonBody.value.trim()].filter(Boolean).join('. ');
 
       if(!text){ alert('낭독할 내용이 없습니다.'); return; }
       const u = new SpeechSynthesisUtterance(text.replace(/\n{2,}/g, '. ').replace(/\n/g,' '));
@@ -1667,20 +1718,20 @@ w.addEventListener('load', () => {
       // 모달이 떠 있고, 모달 편집기가 보일 때만
       if (modalWrap.getAttribute('aria-hidden') === 'true') return;
       if (sermonEditor.style.display === 'none') return;
-    
+
       // Alt 조합만 허용
       if (!e.altKey || e.ctrlKey || e.metaKey) return;
-    
+
       // 포커스가 본문 내용(div#sermonBody) 내부일 때
       const active = document.activeElement;
       const inEditor = active === sermonBody || sermonBody.contains(active);
       if (!inEditor) return;
-    
+
       const k = (e.key||'').toLowerCase();
       if (!['b','i','u','c'].includes(k)) return;
-    
+
       e.preventDefault(); e.stopPropagation();
-    
+
       if (k === 'b') execFmt('bold');
       else if (k === 'i') execFmt('italic');
       else if (k === 'u') execFmt('underline');
@@ -1689,6 +1740,101 @@ w.addEventListener('load', () => {
         applyColorImmediateToRTE(hex);
       }
     }, true);
+
+/* ===== [모달 편집기 RTE 스타일·단축키 지원 확장] ===== */
+(function enableModalRTEHotkeys(){
+  const editor = document.getElementById('sermonEditor');
+  const bodyEl = document.getElementById('sermonBody');
+  if (!editor || !bodyEl) return;
+
+  // execCommand 래퍼
+  function execFmt(cmd, val=null){
+    document.execCommand(cmd,false,val);
+  }
+
+  // 선택 영역에 색 즉시 적용
+  function applyColorImmediateToModal(hex){
+    const sel = window.getSelection();
+    if(!sel || sel.rangeCount===0) return;
+    const range = sel.getRangeAt(0);
+    if(!bodyEl.contains(range.commonAncestorContainer)) return;
+    document.execCommand('foreColor', false, hex);
+  }
+
+  // ===== Alt 단축키 (b,i,u,c,f) =====
+  window.addEventListener('keydown', (e)=>{
+    if (modalWrap.getAttribute('aria-hidden') === 'true') return;
+    if (editor.style.display === 'none') return;
+    if (!e.altKey || e.ctrlKey || e.metaKey) return;
+
+    const active = document.activeElement;
+    const inEditor = (active === bodyEl) || bodyEl.contains(active);
+    if (!inEditor) return;
+
+    const k = (e.key || '').toLowerCase();
+    if (!['b','i','u','c','f'].includes(k)) return;
+    e.preventDefault(); e.stopPropagation();
+
+    switch(k){
+      case 'b': execFmt('bold'); break;           // 굵게
+      case 'i': execFmt('italic'); break;         // 기울임
+      case 'u': execFmt('underline'); break;      // 밑줄
+      case 'c': {                                 // 색 즉시 적용
+        const colorEl = document.getElementById('color');
+        const hex = colorEl ? colorEl.value : '#ffffff';
+        applyColorImmediateToModal(hex);
+        break;
+      }
+      case 'f': {                                 // 글꼴크기(px) 적용
+        const pxEl = document.getElementById('fontSizePx');
+        const px = pxEl ? parseInt(pxEl.value,10) : 16;
+        if(px && px>=10 && px<=64){
+          document.execCommand('fontSize', false, 7);
+          const fontTags = bodyEl.querySelectorAll('font[size="7"]');
+          fontTags.forEach(ft=>{ ft.removeAttribute('size'); ft.style.fontSize = px+'px'; });
+        }
+        break;
+      }
+    }
+  }, true);
+})();
+
+    // 버튼 클릭 지원 (모달 편집기용)
+    document.getElementById('btnBold')?.addEventListener('click', ()=> document.execCommand('bold'));
+    document.getElementById('btnItalic')?.addEventListener('click', ()=> document.execCommand('italic'));
+    document.getElementById('btnUnderline')?.addEventListener('click', ()=> document.execCommand('underline'));
+    document.getElementById('btnColor')?.addEventListener('click', ()=>{
+      const c = document.getElementById('color')?.value || '#ffffff';
+      document.execCommand('foreColor', false, c);
+    });
+
+// ---------- 붙여넣을 때 굵은 글자에 노랑색 자동 적용 ----------
+document.addEventListener('paste', (e) => {
+  // 현재 커서가 contenteditable 편집기 안이 아닐 경우 무시
+  const editor = document.activeElement;
+  if (!editor || !editor.isContentEditable) return;
+
+  e.preventDefault(); // 기본 붙여넣기 막기
+
+  // 클립보드에서 HTML 또는 텍스트 가져오기
+  const pasteHTML =
+    (e.clipboardData || window.clipboardData).getData('text/html') ||
+    (e.clipboardData || window.clipboardData).getData('text/plain');
+
+  if (!pasteHTML) return;
+
+  // <b>, <strong> 태그에 스타일(color + font-weight) 추가
+  const styledHTML = pasteHTML
+    .replace(/<b(.*?)>/gi, `<b style="color:#ffd86b;font-weight:700;"$1>`)
+    .replace(/<strong(.*?)>/gi, `<strong style="color:#ffd86b;font-weight:700;"$1>`);
+
+  // 현재 커서 위치에 HTML 삽입
+  if (document.queryCommandSupported('insertHTML')) {
+    document.execCommand('insertHTML', false, styledHTML);
+  } else {
+    editor.innerHTML += styledHTML;
+  }
+});
 
 
   </script>
