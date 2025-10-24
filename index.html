@@ -1313,7 +1313,10 @@ main{
   transition:max-height .25s ease, opacity .25s ease;
   max-height:600px; opacity:1;
 }
-.controls-wrap.collapsed{ max-height:0; opacity:0 }
+.controls-wrap.collapsed{
+  max-height:0;
+  opacity:0;
+}
 #toggleControlsBtn{ min-width:96px }
  
 </style>
@@ -1396,13 +1399,14 @@ w.addEventListener('load', () => {
     th.appendChild(im);
 
 // == 편집하기 (도구 영역 펼치기) ==
+// == 편집하기 버튼으로 도구 영역 펼치기 ==
 (function(){
   const wrap = w.document.getElementById('controlsWrap');
   const btn  = w.document.getElementById('toggleControlsBtn');
   if(!wrap || !btn) return;
   const KEY = 'wbps.popup.controls.collapsed';
 
-  // 기본 상태는 "접혀 있음"
+  // 기본은 접혀 있음
   wrap.classList.add('collapsed');
   btn.textContent = '편집하기';
 
@@ -1412,6 +1416,7 @@ w.addEventListener('load', () => {
     btn.textContent = '도구 닫기';
   }
 
+  // 클릭 시 토글
   btn.addEventListener('click', ()=>{
     const collapsed = wrap.classList.toggle('collapsed');
     btn.textContent = collapsed ? '편집하기' : '도구 닫기';
