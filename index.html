@@ -153,6 +153,27 @@
       line-height: 1.0;
     }
 
+    /* ===== 모달 편집기: 본문만 스크롤 ===== */
+#sermonEditor{
+  display:flex;
+  flex-direction:column;
+  max-height: calc(94vh - 56px); /* 모달 헤더·푸터 여백 보정 */
+  overflow: hidden;              /* 에디터 컨테이너 스크롤 금지 */
+}
+#sermonEditor .rte{
+  flex:1 1 auto;
+  min-height:0;
+  overflow:auto;                 /* 본문만 스크롤 */
+}
+/* 모달 RTE 툴바 고정 */
+#rteToolbar{
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+}
+
 
   </style>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600&family=Nanum+Myeongjo&display=swap" rel="stylesheet">
@@ -1140,13 +1161,6 @@ el('newSermonBtn').onclick = ()=>{
       }
     });
 
-/* 기존 함수 자리에 이 버전으로 교체 */
-/* 기존 함수 자리에 이 버전으로 교체 */
-/* 기존 함수 자리에 이 버전으로 교체 (필요한 것만 추가) */
-/* 기존 함수 자리에 이 버전으로 교체 (필요한 것만 추가·수정) */
-/* 기존 함수 자리에 이 버전으로 교체 (최신 완성: 자동저장 + 본문절삽입 + 성경구절(약어지원) + 글자스타일 + 폰트크기(px) + A4 인쇄) */
-/* 기존 함수 자리에 이 버전으로 교체 (프리셋/지우기 제거 + 큰 제목 입력란) */
-/* 교체본 — 프리셋/지우기 제거 + 큰 제목 입력란 + 성경 데이터 자동 로드(bible_paragraphs.json 우선) */
 /* 교체본 — 큰 제목 입력란(2배), 자동저장, 본문절 삽입, 성경구절(약어 지원),
    bible_paragraphs.json 우선 로드, 글자스타일/색/px크기, A4 인쇄,
    ⬇︎삽입된 성경구절을 기울임+밝은 발강색으로 표시(클래스 기반) */
@@ -1262,6 +1276,27 @@ input[type="number"]{width:74px;background:#161922;color:#e6e8ef;border:1px soli
 .rte .verse-header{ color:#ff9090; font-style:italic; font-weight:600; }
 .rte .verse-line{   color:#ffb3b3; font-style:italic; }
 .rte .verse-line sup{ color:#ffd1d1; font-style:italic; }
+
+/* ===== 팝업 편집창: 본문(#b)만 스크롤 ===== */
+main{
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;           /* main 자체 스크롤 금지 */
+}
+.rte{                        /* #b에 붙은 클래스 */
+  flex:1 1 auto;
+  min-height:0;              /* flex 안에서 스크롤 가능하게 */
+  overflow:auto;             /* 본문만 스크롤 */
+}
+/* 툴바 고정 */
+.toolbar{
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: color-mix(in hsl,var(--panel) 85%,black 6%);
+  border-bottom: 1px solid var(--border);
+}
+
 </style>
 </head>
 <body class="context-editor">
