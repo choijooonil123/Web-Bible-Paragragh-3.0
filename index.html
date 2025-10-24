@@ -128,6 +128,32 @@
     /* 모달 본문 RTE 공용 스타일 */
     .rte{min-height:360px;resize:vertical;padding:14px;background:#161922;border:1px solid #2a3040;border-radius:10px;line-height:1.85;letter-spacing:.015em;caret-color:var(--accent);outline:none}
 
+    /* ==== 모달 편집기(sermonEditor) 줄 간격 타이트 모드 ==== */
+    /* 기존 .rte / .context-editor보다 구체적인 선택자로 덮어쓰기 */
+    #sermonEditor.context-editor .rte{
+      line-height: 1.55 !important;   /* 기본 1.85 → 1.55 */
+      letter-spacing: 0.01em !important; /* 살짝 좁게 */
+    }
+    
+    /* 문단 간격도 약간 줄이기 */
+    #sermonEditor.context-editor .rte p{
+      margin: 6px 0;                  /* 기본 브라우저 margin(보통 16px) → 6px */
+    }
+    
+    /* 성경절 블록은 읽기성 유지하며 약간만 타이트하게 */
+    #sermonEditor.context-editor .rte .verse-line{
+      line-height: 1.5;
+    }
+    #sermonEditor.context-editor .rte .verse-line sup{
+      margin-right: 4px;               /* 절 번호와 본문 간격 확보 */
+    }
+    
+    /* 줄바꿈(<br>) 사이 여백 균일화(선택사항) */
+    #sermonEditor.context-editor .rte br{
+      line-height: 1.0;
+    }
+
+    
   </style>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600&family=Nanum+Myeongjo&display=swap" rel="stylesheet">
 </head>
@@ -1691,7 +1717,75 @@ w.addEventListener('load', () => {
       }
     }, true);
 
+/* ===== [모달 편집기 RTE 스타일·단축키 지원 확장] ===== */
+(function enableModalRTEHotkeys(){
+  const editor = document.getElementById('sermonEditor');
+  const bodyEl = document.getElementById('sermonBody');
+  if (!editor || !bodyEl) return;
 
+  // execCommand 래퍼
+  function execFmt(cmd, val=null){
+    document.execCommand(cmd,false,val);
+  }
+
+  // 선택 영역에 색 즉시 적용
+  function applyColorImmediateToModal(hex){
+    const sel = window.getSelection();
+    if(!sel || sel.rangeCount===0) return;
+    const range = sel.getRangeAt(0);
+    if(!bodyEl.contains(range.commonAncestorContainer)) return;
+    document.execCommand('foreColor', false, hex);
+  }
+
+  // ===== Alt 단축키 (b,i,u,c,f) =====
+  window.addEventListener('keydown', (e)=>{
+    if (modalWrap.getAttribute('aria-hidden') === 'true') return;
+    if (editor.style.display === 'none') return;
+    if (!e.altKey || e.ctrlKey || e.metaKey) return;
+
+    const active = document.activeElement;
+    const inEditor = (active === bodyEl) || bodyEl.contains(active);
+    if (!inEditor) return;
+
+    const k = (e.key || '').toLowerCase();
+    if (!['b','i','u','c','f'].includes(k)) return;
+    e.preventDefault(); e.stopPropagation();
+
+    switch(k){
+      case 'b': execFmt('bold'); break;           // 굵게
+      case 'i': execFmt('italic'); break;         // 기울임
+      case 'u': execFmt('underline'); break;      // 밑줄
+      case 'c': {                                 // 색 즉시 적용
+        const colorEl = document.getElementById('color');
+        const hex = colorEl ? colorEl.value : '#ffffff';
+        applyColorImmediateToModal(hex);
+        break;
+      }
+      case 'f': {                                 // 글꼴크기(px) 적용
+        const pxEl = document.getElementById('fontSizePx');
+        const px = pxEl ? parseInt(pxEl.value,10) : 16;
+        if(px && px>=10 && px<=64){
+          document.execCommand('fontSize', false, 7);
+          const fontTags = bodyEl.querySelectorAll('font[size="7"]');
+          fontTags.forEach(ft=>{ ft.removeAttribute('size'); ft.style.fontSize = px+'px'; });
+        }
+        break;
+      }
+    }
+  }, true);
+})();
+
+    // 버튼 클릭 지원 (모달 편집기용)
+    document.getElementById('btnBold')?.addEventListener('click', ()=> document.execCommand('bold'));
+    document.getElementById('btnItalic')?.addEventListener('click', ()=> document.execCommand('italic'));
+    document.getElementById('btnUnderline')?.addEventListener('click', ()=> document.execCommand('underline'));
+    document.getElementById('btnColor')?.addEventListener('click', ()=>{
+      const c = document.getElementById('color')?.value || '#ffffff';
+      document.execCommand('foreColor', false, c);
+    });
+    
+
+    
   </script>
 </body>
 </html>
