@@ -1424,6 +1424,29 @@ w.addEventListener('load', () => {
   });
 })();
 
+// ===== 인쇄(A4) 버튼 =====
+const printBtn = w.document.getElementById('print');
+if (printBtn) {
+  printBtn.addEventListener('click', () => {
+    // A4 기본 설정용 CSS를 추가
+    const style = w.document.createElement('style');
+    style.textContent = `
+      @media print {
+        @page { size: A4 portrait; margin: 20mm; }
+        body { background: white; color: black; }
+        header, #toggleControlsBtn { display: none !important; }
+        .toolbar, .thumbs, #imgs { display: none !important; }
+        #b.rte { border:none !important; box-shadow:none !important; }
+      }
+    `;
+    w.document.head.appendChild(style);
+
+    // 브라우저 인쇄창 열기
+    w.print();
+  });
+}
+
+
     
   });
 
