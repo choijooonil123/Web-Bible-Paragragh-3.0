@@ -323,8 +323,13 @@
     const modalWrap = el('modalWrap'), modalRef = el('modalRef');
     const sermonList = el('sermonList'), sermonEditor = el('sermonEditor');
     const sermonTitle = el('sermonTitle'), sermonBody = el('sermonBody');
-    sermonBody.addEventListener('blur',()=>{sermonBody.value=stripBlankLines(sermonBody.value);});
-    sermonBody.addEventListener('paste',()=>{setTimeout(()=>{sermonBody.value=stripBlankLines(sermonBody.value);},0);});
+    // sermonBody.addEventListener('blur',()=>{sermonBody.value=stripBlankLines(sermonBody.value);});
+    // sermonBody.addEventListener('paste',()=>{setTimeout(()=>{sermonBody.value=stripBlankLines(sermonBody.value);},0);});
+
+    // 개행을 보존해야 하므로 stripBlankLines 제거
+    sermonBody.addEventListener('blur',()=>{}); 
+    sermonBody.addEventListener('paste',()=>{});
+    
     const sermonThumbs = el('sermonThumbs'), sermonImages = el('sermonImages');
     const editorSpeakBtn = el('editorSpeak');
     const modalFooterNew = el('modalFooterNew');
@@ -943,7 +948,10 @@
       const title = sermonTitle.value.trim() || '(제목 없음)';
       // const body  = sermonBody.value.trim();
 
-      const body  = (getBodyHTML() || '').trim();
+      // 개행, <br> 보존 버전
+      let body = getBodyHTML() || '';
+      // 필요 시 앞뒤 공백만 제거하되 내부 개행은 유지
+      body = body.replace(/^\s+|\s+$/g, '');
       
       const imgs  = [...sermonThumbs.querySelectorAll('img')].map(img=>img.src);
       const now   = new Date();
