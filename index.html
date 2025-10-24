@@ -125,6 +125,9 @@
       .context-editor{color:#1b2533;background:#fff;box-shadow:0 6px 16px rgba(0,0,0,.08)}
       .context-editor blockquote{color:#445066;background:#f7f9fc}
     }
+    /* 모달 본문 RTE 공용 스타일 */
+    .rte{min-height:360px;resize:vertical;padding:14px;background:#161922;border:1px solid #2a3040;border-radius:10px;line-height:1.85;letter-spacing:.015em;caret-color:var(--accent);outline:none}
+
   </style>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600&family=Nanum+Myeongjo&display=swap" rel="stylesheet">
 </head>
@@ -184,7 +187,23 @@
 
       <div class="editor" id="sermonEditor" style="display:none">
         <input type="text" id="sermonTitle" placeholder="제목" />
-        <textarea id="sermonBody" placeholder="내용"></textarea>
+      
+        <!-- 🔽🔽🔽 추가: RTE 서식 툴바 -->
+        <div id="rteToolbar" class="editor-bar" style="gap:6px; flex-wrap:wrap; margin-top:-4px;">
+          <button type="button" id="rteBold"><b>굵게</b> (Alt+B)</button>
+          <button type="button" id="rteItalic"><i>기울임</i> (Alt+I)</button>
+          <button type="button" id="rteUnderline"><u>밑줄</u> (Alt+U)</button>
+          <label class="pill" style="display:inline-flex;align-items:center;gap:6px">
+            <span class="muted">글자색</span>
+            <input id="rteColor" type="color" value="#ffffff" style="width:32px;height:28px;padding:0;border-radius:8px">
+            <button type="button" id="rteApplyColor">적용 (Alt+C)</button>
+          </label>
+        </div>
+        <!-- 🔼🔼🔼 추가 끝 -->
+      
+        <!-- 🔁 교체: textarea → div[contenteditable] -->
+        <div id="sermonBody" class="rte" contenteditable="true" spellcheck="false" placeholder="내용"></div>
+      
         <div class="editor-bar">
           <input type="file" id="sermonImages" accept="image/*" multiple />
           <div class="grow"></div>
@@ -195,6 +214,7 @@
         </div>
         <div class="thumbs" id="sermonThumbs"></div>
       </div>
+
 
       <div id="modalFooterNew" class="footer" style="padding:10px 14px; border-top:1px solid var(--border)">
         <button id="newSermonBtn" class="primary">새 설교</button>
@@ -785,7 +805,8 @@
       modalFooterNew.style.display = 'none';
 
       sermonTitle.value = doc.title || '';
-      sermonBody.value  = doc.body  || '';
+      setBodyHTML(doc.body || '');
+
       sermonThumbs.innerHTML = '';
       (doc.images||[]).forEach(src=>{ const img=new Image(); img.src=src; sermonThumbs.appendChild(img); });
 
@@ -828,8 +849,10 @@
               if(!data || !data.text) throw new Error('AI 응답이 비었습니다.');
       
               // 본문에 주입(덮어쓰기; 기존 내용 보존하려면 아래 줄을 주석 처리하고 append 방식으로 바꾸세요)
-              sermonBody.value = data.text.trim();
-      
+              // sermonBody.value = data.text.trim();
+
+              setBodyHTML(data.text.trim());
+              
               // 👉 이어붙이기를 원하시면 아래 주석 해제하고 위 줄 주석 처리:
               // sermonBody.value = (sermonBody.value.trim() ? sermonBody.value.trim() + '\n\n' : '') + data.text.trim();
       
@@ -918,7 +941,10 @@
     el('saveSermon').onclick = ()=>{
       sermonBody.value=stripBlankLines(sermonBody.value);
       const title = sermonTitle.value.trim() || '(제목 없음)';
-      const body  = sermonBody.value.trim();
+      // const body  = sermonBody.value.trim();
+
+      const body  = (getBodyHTML() || '').trim();
+      
       const imgs  = [...sermonThumbs.querySelectorAll('img')].map(img=>img.src);
       const now   = new Date();
       const date  = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
@@ -958,13 +984,50 @@
       sermonImages.value = '';
     });
 
+    /* ===== RTE 유틸 (모달 편집기용) ===== */
+    function isRTE(){ return sermonBody && sermonBody.getAttribute('contenteditable') === 'true'; }
+    function getBodyHTML(){ return isRTE() ? sermonBody.innerHTML : (sermonBody.value || ''); }
+    function setBodyHTML(html){ if(isRTE()) sermonBody.innerHTML = html || ''; else sermonBody.value = html || ''; }
+    
+    // 선택 영역에 색 즉시 적용 (선택 없으면 caret에 span 삽입)
+    function applyColorImmediateToRTE(hex){
+      if(!isRTE()) return;
+      const sel = window.getSelection();
+      if(!sel || sel.rangeCount===0){ sermonBody.focus(); return; }
+      const range = sel.getRangeAt(0);
+      if(!sermonBody.contains(range.commonAncestorContainer)){ sermonBody.focus(); return; }
+    
+      if(range.collapsed){
+        const sp = document.createElement('span');
+        sp.style.color = hex;
+        sp.appendChild(document.createTextNode('\u200B')); // zero-width space
+        range.insertNode(sp);
+        sel.removeAllRanges();
+        const r = document.createRange();
+        r.setStart(sp.firstChild, 1); r.collapse(true);
+        sel.addRange(r);
+        return;
+      }
+      document.execCommand('foreColor', false, hex);
+    }
+    function execFmt(cmd){
+      if(isRTE()){
+        sermonBody.focus({preventScroll:true});
+        document.execCommand(cmd,false,null);
+      }
+    }
+
+    
     /* --------- Editor TTS --------- */
     editorSpeakBtn.onclick = ()=> toggleEditorSpeak();
     function toggleEditorSpeak(){
-      sermonBody.value=stripBlankLines(sermonBody.value);
+      const tmp = document.createElement('div'); tmp.innerHTML = getBodyHTML();
+      tmp.querySelectorAll('sup').forEach(s=> s.textContent='['+s.textContent+'] ');
+      const plain = (tmp.textContent||'').replace(/\n{2,}/g,' ').replace(/\s+/g,' ').trim();
+      const text = [sermonTitle.value.trim(), plain].filter(Boolean).join('. ');
       if(!EDITOR_READER.synth) return alert('이 브라우저는 음성합성을 지원하지 않습니다.');
       if(EDITOR_READER.playing){ stopEditorSpeak(); return; }
-      const text = [sermonTitle.value.trim(), sermonBody.value.trim()].filter(Boolean).join('. ');
+
       if(!text){ alert('낭독할 내용이 없습니다.'); return; }
       const u = new SpeechSynthesisUtterance(text.replace(/\n{2,}/g, '. ').replace(/\n/g,' '));
       applyVoice(u); u.onend = ()=> stopEditorSpeak(true);
@@ -1583,6 +1646,42 @@ w.addEventListener('load', () => {
   window.addEventListener('message', onMsg);
 }
 
+    // RTE 툴바 버튼 (모달 전용)
+    document.getElementById('rteBold')?.addEventListener('click', ()=> execFmt('bold'));
+    document.getElementById('rteItalic')?.addEventListener('click', ()=> execFmt('italic'));
+    document.getElementById('rteUnderline')?.addEventListener('click', ()=> execFmt('underline'));
+    document.getElementById('rteApplyColor')?.addEventListener('click', ()=>{
+      const hex = (document.getElementById('rteColor')?.value) || '#ffffff';
+      applyColorImmediateToRTE(hex);
+    });
+
+    // Alt 단축키 (내용요약/단위/전체/주석 모달의 RTE 전용)
+    window.addEventListener('keydown', (e)=>{
+      // 모달이 떠 있고, 모달 편집기가 보일 때만
+      if (modalWrap.getAttribute('aria-hidden') === 'true') return;
+      if (sermonEditor.style.display === 'none') return;
+    
+      // Alt 조합만 허용
+      if (!e.altKey || e.ctrlKey || e.metaKey) return;
+    
+      // 포커스가 본문 내용(div#sermonBody) 내부일 때
+      const active = document.activeElement;
+      const inEditor = active === sermonBody || sermonBody.contains(active);
+      if (!inEditor) return;
+    
+      const k = (e.key||'').toLowerCase();
+      if (!['b','i','u','c'].includes(k)) return;
+    
+      e.preventDefault(); e.stopPropagation();
+    
+      if (k === 'b') execFmt('bold');
+      else if (k === 'i') execFmt('italic');
+      else if (k === 'u') execFmt('underline');
+      else if (k === 'c') {
+        const hex = (document.getElementById('rteColor')?.value) || '#ffffff';
+        applyColorImmediateToRTE(hex);
+      }
+    }, true);
 
 
   </script>
