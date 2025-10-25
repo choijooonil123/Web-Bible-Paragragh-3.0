@@ -237,7 +237,6 @@
         <span class="muted" id="modalRef">—</span>
         <div class="grow"></div>
         <button id="closeModal">닫기</button>
-        <button id="modalToggleControlsBtn" style="display:none">편집하기</button>
       </div>
 
       <div class="list" id="sermonList"></div>
@@ -1325,11 +1324,10 @@ main{
 <header>
   <strong>설교 편집</strong><span class="muted" id="ref"></span>
   <div class="grow"></div>
-  <button id="toggleControlsBtn">편집하기</button>
   <button id="x">닫기</button>
 </header>
 <main>
- <div id="controlsWrap" class="controls-wrap collapsed">
+<div id="controlsWrap" class="controls-wrap">
   <input id="t" class="title-input" type="text" autocomplete="off" placeholder="설교 제목을 입력하세요">
   <div class="toolbar">
     <button id="btnBold"><b>굵게</b></button>
@@ -1397,32 +1395,6 @@ w.addEventListener('load', () => {
     const im=new w.Image();
     im.src=src;
     th.appendChild(im);
-
-// == 편집하기 (도구 영역 펼치기) ==
-// == 편집하기 버튼으로 도구 영역 펼치기 ==
-(function(){
-  const wrap = w.document.getElementById('controlsWrap');
-  const btn  = w.document.getElementById('toggleControlsBtn');
-  if(!wrap || !btn) return;
-  const KEY = 'wbps.popup.controls.collapsed';
-
-  // 기본은 접혀 있음
-  wrap.classList.add('collapsed');
-  btn.textContent = '편집하기';
-
-  // 저장된 상태 복원
-  if(localStorage.getItem(KEY)==='0'){
-    wrap.classList.remove('collapsed');
-    btn.textContent = '도구 닫기';
-  }
-
-  // 클릭 시 토글
-  btn.addEventListener('click', ()=>{
-    const collapsed = wrap.classList.toggle('collapsed');
-    btn.textContent = collapsed ? '편집하기' : '도구 닫기';
-    localStorage.setItem(KEY, collapsed ? '1' : '0');
-  });
-})();
 
 // ===== 인쇄(A4) 버튼 =====
 const printBtn = w.document.getElementById('print');
@@ -1947,55 +1919,6 @@ document.addEventListener('paste', (e) => {
     editor.innerHTML += styledHTML;
   }
 });
-
-    // == 모달 편집기 도구 접기/펼치기 ==
-(function(){
-  const btn  = document.getElementById('modalToggleControlsBtn');
-  const wrap = document.getElementById('modalControlsWrap');
-  if(!btn || !wrap) return;
-
-  const showBtnIfEditorVisible = ()=>{
-    const editing = sermonEditor.style.display !== 'none';
-    btn.style.display = editing ? '' : 'none';
-
-    if(editing){
-      const para = BIBLE?.books?.[CURRENT.book]?.[CURRENT.chap]?.paras?.[CURRENT.paraIdx];
-      const pid  = para ? `${CURRENT.book}|${CURRENT.chap}|${para.ref}` : '';
-      const KEY  = `wbps.modal.controls.collapsed:${pid}`;
-
-      const raw = localStorage.getItem(KEY);
-      // 저장값 없으면 기본=접힘(true)
-      const collapsed = (raw === null) ? true : (raw === '1');
-      wrap.classList.toggle('collapsed', collapsed);
-      btn.textContent = collapsed ? '편집하기' : '도구 닫기';
-
-      btn.onclick = ()=>{
-        const c = wrap.classList.toggle('collapsed');
-        btn.textContent = c ? '편집하기' : '도구 닫기';
-        localStorage.setItem(KEY, c ? '1' : '0');
-      };
-
-    }
-  };
-
-  // 에디터 진입 지점에 후킹
-  const _openSingleDocEditor = openSingleDocEditor;
-  openSingleDocEditor = function(kind){
-    _openSingleDocEditor(kind);
-    setTimeout(showBtnIfEditorVisible, 0);
-  };
-  const _startNewSermon = startNewSermon;
-  startNewSermon = function(){
-    _startNewSermon();
-    setTimeout(showBtnIfEditorVisible, 0);
-  };
-  const _editSermon = editSermon;
-  editSermon = function(idx){
-    _editSermon(idx);
-    setTimeout(showBtnIfEditorVisible, 0);
-  };
-})();
-
 
   </script>
 </body>
