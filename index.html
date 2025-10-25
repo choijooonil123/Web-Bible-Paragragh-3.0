@@ -183,6 +183,17 @@
 #modalControlsWrap.collapsed{ max-height:0; opacity:0 }
 #modalToggleControlsBtn{ min-width:96px }
 
+    /* ✅ 설교 제목 + 툴바 영역을 항상 상단에 고정 */
+#modalControlsWrap, 
+.controls-wrap {
+  position: sticky;
+  top: 0;                     /* 화면 맨 위에 붙임 */
+  z-index: 20;                /* 본문보다 위에 표시 */
+  background: var(--panel);   /* 배경색 유지 */
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 6px;
+}
+
 
   </style>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600&family=Nanum+Myeongjo&display=swap" rel="stylesheet">
