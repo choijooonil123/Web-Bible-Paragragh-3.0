@@ -194,6 +194,24 @@
   padding-bottom: 6px;
 }
 
+  /* ✅ 고정된 툴바(제목 + 버튼 영역) */
+#modalControlsWrap {
+  position: sticky;          /* 스크롤해도 화면 위에 고정 */
+  top: 56px;                 /* 모달 헤더 높이만큼 띄움 (헤더 높이가 다르면 조정하세요) */
+  z-index: 50;
+  background: var(--panel);  /* 배경색 유지 */
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 6px;
+}
+
+/* ✅ 본문 영역(#sermonEditor .rte)이 가려지지 않도록 여백 확보 */
+#sermonEditor .rte {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding-top: var(--editor-pad-top, 0px);
+  scroll-padding-top: var(--editor-pad-top, 0px);
+}
+  
 
   </style>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600&family=Nanum+Myeongjo&display=swap" rel="stylesheet">
@@ -1328,7 +1346,12 @@ main{
   opacity:0;
 }
 #toggleControlsBtn{ min-width:96px }
- 
+
+#b.rte {
+  padding-top: var(--pop-editor-pad-top, 0px);
+  scroll-padding-top: var(--pop-editor-pad-top, 0px);
+}
+  
 </style>
 </head>
 <body class="context-editor">
@@ -1426,6 +1449,25 @@ if (printBtn) {
 
     // 브라우저 인쇄창 열기
     w.print();
+
+// ==== [팝업] 고정영역 높이만큼 본문 상단 패딩 자동 보정 ====
+function adjustPopupEditorPadding(){
+  const wrap = w.document.getElementById('controlsWrap');
+  const body = w.document.getElementById('b');
+  if(!wrap || !body) return;
+  const h = wrap.offsetHeight || 0;
+  body.style.setProperty('--pop-editor-pad-top', (h + 8) + 'px');
+}
+
+// 초기 실행 (열릴 때 한 번)
+adjustPopupEditorPadding();
+
+// 창 크기 바뀔 때마다 재계산
+w.addEventListener('resize', adjustPopupEditorPadding);
+
+// 제목 입력란 줄이 바뀌거나 길어질 때도 재계산
+w.document.getElementById('t')?.addEventListener('input', adjustPopupEditorPadding);
+   
   });
 }
 
@@ -1931,6 +1973,25 @@ document.addEventListener('paste', (e) => {
   }
 });
 
+/* ==== [모달] 고정영역 높이만큼 본문 상단 패딩 자동 보정 ==== */
+function adjustModalEditorPadding() {
+  const wrap = document.getElementById('modalControlsWrap');
+  const body = document.querySelector('#sermonEditor .rte');
+  if (!wrap || !body) return;
+  const h = wrap.offsetHeight || 0;
+  body.style.setProperty('--editor-pad-top', (h + 8) + 'px'); // 여유 8px
+}
+
+/* 화면 크기 바뀔 때마다 재계산 */
+window.addEventListener('resize', adjustModalEditorPadding);
+
+/* 제목 입력란이 줄바뀌거나 내용이 늘어날 때도 재계산 */
+document.getElementById('sermonTitle')?.addEventListener('input', adjustModalEditorPadding);
+
+/* 초기 실행 */
+window.addEventListener('load', adjustModalEditorPadding);
+
+    
   </script>
 </body>
 </html>
