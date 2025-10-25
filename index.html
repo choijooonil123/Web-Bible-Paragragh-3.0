@@ -154,17 +154,21 @@
     }
 
     /* ===== 모달 편집기: 본문만 스크롤 ===== */
+/* 설교편집창 자체를 '고정 크기'로 만들고, 내부만 스크롤 */
 #sermonEditor{
   display:flex;
   flex-direction:column;
-  max-height: calc(94vh - 56px); /* 모달 헤더·푸터 여백 보정 */
-  overflow: hidden;              /* 에디터 컨테이너 스크롤 금지 */
+  height: calc(94vh - 56px);   /* ⬅️ 고정 높이 */
+  min-height: calc(94vh - 56px);
+  max-height: calc(94vh - 56px);
+  overflow: hidden;            /* 바깥은 스크롤 금지 */
 }
 #sermonEditor .rte{
-  flex:1 1 auto;
-  min-height:0;
-  overflow:auto;                 /* 본문만 스크롤 */
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;              /* ⬅️ 본문만 스크롤 */
 }
+
 /* 모달 RTE 툴바 고정 */
 #rteToolbar{
   position: sticky;
@@ -1351,7 +1355,24 @@ main{
   padding-top: var(--pop-editor-pad-top, 0px);
   scroll-padding-top: var(--pop-editor-pad-top, 0px);
 }
-  
+
+/* ✅ 팝업 설교편집창 고정 크기 + 본문만 스크롤 */
+html, body {
+  height: 100vh;
+  overflow: hidden;            /* 바깥 스크롤 금지 */
+}
+
+main {
+  height: calc(100vh - 56px - 56px); /* 헤더(56px) + 푸터(56px) 제외 */
+  overflow: hidden;                  /* 전체 영역 고정 */
+}
+
+/* 본문 편집 영역만 스크롤 */
+#b.rte {
+  height: 100%;
+  overflow: auto;
+}
+
 </style>
 </head>
 <body class="context-editor">
