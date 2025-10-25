@@ -183,7 +183,37 @@
 #modalControlsWrap.collapsed{ max-height:0; opacity:0 }
 #modalToggleControlsBtn{ min-width:96px }
 
-
+/* ===== 인라인 툴바 ===== */
+.inline-toolbar {
+  position: absolute;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 4px 6px;
+  display: flex;
+  gap: 6px;
+  z-index: 9999;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+  transition: opacity 0.2s;
+}
+.inline-toolbar button {
+  background: none;
+  border: none;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+}
+.inline-toolbar button:hover { color: var(--accent); }
+.inline-toolbar input[type="color"] {
+  width: 24px;
+  height: 24px;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  background: none;
+}
+    
   </style>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600&family=Nanum+Myeongjo&display=swap" rel="stylesheet">
 </head>
@@ -237,7 +267,6 @@
         <span class="muted" id="modalRef">—</span>
         <div class="grow"></div>
         <button id="closeModal">닫기</button>
-        <button id="modalToggleControlsBtn" style="display:none">편집하기</button>
       </div>
 
       <div class="list" id="sermonList"></div>
@@ -1277,7 +1306,6 @@ input[type="number"]{width:74px;background:#161922;color:#e6e8ef;border:1px soli
 .context-editor em,.context-editor i{font-style:italic}
 .context-editor strong,.context-editor b{
   font-weight:700;
-  color:#ffd86b; /* 밝은 노랑색 */
 }
 .context-editor u{text-decoration:underline}
 .context-editor s,.context-editor strike{text-decoration:line-through}
@@ -1325,7 +1353,6 @@ main{
 <header>
   <strong>설교 편집</strong><span class="muted" id="ref"></span>
   <div class="grow"></div>
-  <button id="toggleControlsBtn">편집하기</button>
   <button id="x">닫기</button>
 </header>
 <main>
@@ -1996,7 +2023,80 @@ document.addEventListener('paste', (e) => {
   };
 })();
 
+  // ===== 선택 시 자동 등장하는 인라인 툴바 =====
+(function(){
+  const toolbar = document.getElementById('inlineToolbar');
+  const colorInput = document.getElementById('textColor');
+  if(!toolbar) return;
 
+  // 버튼 동작
+  toolbar.addEventListener('click', (e) => {
+    const cmd = e.target.dataset.cmd;
+    if (!cmd) return;
+    e.preventDefault();
+    document.execCommand(cmd, false, null);
+    hideToolbar();
+  });
+
+  // 색상 선택
+  colorInput.addEventListener('input', () => {
+    document.execCommand('foreColor', false, colorInput.value);
+    hideToolbar();
+  });
+
+  // 마우스로 글자 선택 시 툴바 표시
+  document.addEventListener('mouseup', (e) => {
+    const sel = window.getSelection();
+    if (!sel.rangeCount || sel.isCollapsed) { hideToolbar(); return; }
+    const range = sel.getRangeAt(0);
+    const rect = range.getBoundingClientRect();
+    showToolbar(rect.left + window.scrollX + rect.width / 2, rect.top + window.scrollY - 40);
+  });
+
+  document.addEventListener('scroll', hideToolbar);
+  document.addEventListener('mousedown', (e)=>{
+    if(!toolbar.contains(e.target)) hideToolbar();
+  });
+
+  function showToolbar(x, y) {
+    toolbar.style.left = `${x - toolbar.offsetWidth / 2}px`;
+    toolbar.style.top = `${y - 40}px`;
+    toolbar.hidden = false;
+    toolbar.style.opacity = '1';
+  }
+
+  function hideToolbar() {
+    toolbar.hidden = true;
+  }
+})();
+
+// ===== 붙여넣기 시 굵은 글자만 노란색 =====
+document.querySelectorAll('.rte, #sermonBody, #b').forEach(ed=>{
+  ed.addEventListener('paste', (e)=>{
+    e.preventDefault();
+    const html = (e.clipboardData || window.clipboardData).getData('text/html') ||
+                 (e.clipboardData || window.clipboardData).getData('text/plain');
+    const temp = document.createElement('div');
+    temp.innerHTML = html;
+
+    // 기존 <b>, <strong> 만 노란색 처리
+    temp.querySelectorAll('b,strong').forEach(el=>{
+      el.style.color = '#ffd86b';
+    });
+
+    document.execCommand('insertHTML', false, temp.innerHTML);
+  });
+});
+    
   </script>
+
+<!-- ===== 선택 시 나타나는 인라인 툴바 ===== -->
+<div id="inlineToolbar" class="inline-toolbar" hidden>
+  <button data-cmd="bold" title="굵게(B)"><b>B</b></button>
+  <button data-cmd="italic" title="기울임(I)"><i>I</i></button>
+  <button data-cmd="underline" title="밑줄(U)"><u>U</u></button>
+  <input type="color" id="textColor" title="글자색" />
+</div>
+  
 </body>
 </html>
