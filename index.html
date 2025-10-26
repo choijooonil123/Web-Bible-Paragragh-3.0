@@ -282,6 +282,17 @@
       </div>
       <div class="list" id="sermonList"></div>
       <div class="editor" id="sermonEditor" style="display:none">
+        <div id="modalControlsWrap">
+            <input type="text" id="sermonTitle" placeholder="제목" />
+            <button type="button" id="rteBold"><b>굵게</b> (Alt+B)</button>
+            <button type="button" id="rteItalic"><i>기울임</i> (Alt+I)</button>
+            <button type="button" id="rteUnderline"><u>밑줄</u> (Alt+U)</button>
+            <label class="pill" style="display:inline-flex;align-items:center;gap:6px">
+                <span class="muted">글자색</span>
+                <input id="rteColor" type="color" value="#ffffff" style="width:32px;height:28px;padding:0;border-radius:8px">
+                <button type="button" id="rteApplyColor">적용 (Alt+C)</button>
+            </label>
+        </div>
     </div>
 
         <!-- 🔁 교체: textarea → div[contenteditable] -->
