@@ -219,6 +219,14 @@
     /* 모달 편집기 상단 RTE 툴바 숨김 */
     #modalControlsWrap #rteToolbar { display:none !important; }
 
+    .toolbar{ display:none !important; }
+
+    /* ===== 모달 편집기(sermonEditor) 안 툴바 숨김 ===== */
+    #sermonEditor #modalControlsWrap #rteToolbar {
+    display: none !important;
+    }
+
+
   </style>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600&family=Nanum+Myeongjo&display=swap" rel="stylesheet">
 </head>
@@ -274,18 +282,7 @@
       </div>
       <div class="list" id="sermonList"></div>
       <div class="editor" id="sermonEditor" style="display:none">
-        <div id="modalControlsWrap">
-            <input type="text" id="sermonTitle" placeholder="제목" />
-            <button type="button" id="rteBold"><b>굵게</b> (Alt+B)</button>
-            <button type="button" id="rteItalic"><i>기울임</i> (Alt+I)</button>
-            <button type="button" id="rteUnderline"><u>밑줄</u> (Alt+U)</button>
-            <label class="pill" style="display:inline-flex;align-items:center;gap:6px">
-                <span class="muted">글자색</span>
-                <input id="rteColor" type="color" value="#ffffff" style="width:32px;height:28px;padding:0;border-radius:8px">
-                <button type="button" id="rteApplyColor">적용 (Alt+C)</button>
-            </label>
-            </div>
-        </div>
+    </div>
 
         <!-- 🔁 교체: textarea → div[contenteditable] -->
         <div id="sermonBody" class="rte" contenteditable="true" spellcheck="false" placeholder="내용"></div>
