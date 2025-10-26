@@ -271,7 +271,7 @@
         <button id="closeModal">닫기</button>
       </div>
 
-      <!-- <div class="list" id="sermonList"></div> -->
+      <div class="list" id="sermonList"></div>
 
       <div class="editor" id="sermonEditor" style="display:none">
         <div id="modalControlsWrap">
@@ -1016,12 +1016,15 @@
     };
 
     function startNewSermon(){
-      sermonList.innerHTML = '<div class="muted" style="padding:0 14px">새 설교를 작성해 저장하면 이 단락에 붙습니다.</div>';
-      sermonEditor.classList.add('context-editor');
-      sermonEditor.style.display = '';
-      sermonTitle.value = ''; sermonBody.value = ''; sermonThumbs.innerHTML = ''; sermonImages.value = '';
-      sermonEditor.dataset.editing = '';
-      stopEditorSpeak(true);
+        sermonList.innerHTML = '<div class="muted" style="padding:0 14px">새 설교를 작성해 저장하면 이 단락에 붙습니다.</div>';
+        sermonEditor.classList.add('context-editor');
+        sermonEditor.style.display = '';
+        sermonTitle.value = '';
+        setBodyHTML('');                  // ✅ 본문 초기화는 유틸로
+        sermonThumbs.innerHTML = '';
+        sermonImages.value = '';
+        sermonEditor.dataset.editing = '';
+        stopEditorSpeak(true);
     }
     function editSermon(idx){
       const map = getSermonMap(); const arr = map[CURRENT.paraId] || []; const it = arr[idx]; if(!it) return;
