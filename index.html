@@ -216,11 +216,8 @@
     scroll-padding-top: var(--editor-pad-top, 0px);
     }
 
-    /* ===== 단위성경속맥락·전체성경속맥락·주석·내용요약 편집기 상단 툴바 숨김 ===== */
-    .modal .toolbar,
-    #modalWrap .toolbar {
-    display: none !important;
-    }
+    /* 모달 편집기 상단 RTE 툴바 숨김 */
+    #modalControlsWrap #rteToolbar { display:none !important; }
 
   </style>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600&family=Nanum+Myeongjo&display=swap" rel="stylesheet">
@@ -279,7 +276,6 @@
       <div class="editor" id="sermonEditor" style="display:none">
         <div id="modalControlsWrap">
             <input type="text" id="sermonTitle" placeholder="제목" />
-            <div id="rteToolbar" class="editor-bar" style="gap:6px; flex-wrap:wrap; margin-top:-4px;">
             <button type="button" id="rteBold"><b>굵게</b> (Alt+B)</button>
             <button type="button" id="rteItalic"><i>기울임</i> (Alt+I)</button>
             <button type="button" id="rteUnderline"><u>밑줄</u> (Alt+U)</button>
@@ -900,69 +896,69 @@
     el('closeModal').onclick = ()=>{ modalWrap.style.display='none'; modalWrap.setAttribute('aria-hidden','true'); stopEditorSpeak(true); };
 
     function openSingleDocEditor(kind){
-    // ✅ 1) CURRENT가 비어 있으면, 현재 열려있는 단락에서 동기화
-    if (!CURRENT.book || !Number.isFinite(CURRENT.chap) || !Number.isFinite(CURRENT.paraIdx)) {
-        if (!syncCurrentFromOpen()) {
-        alert('단락을 먼저 선택해 주세요.');
-        return;
+        // ✅ 1) CURRENT가 비어 있으면, 현재 열려있는 단락에서 동기화
+        if (!CURRENT.book || !Number.isFinite(CURRENT.chap) || !Number.isFinite(CURRENT.paraIdx)) {
+            if (!syncCurrentFromOpen()) {
+            alert('단락을 먼저 선택해 주세요.');
+            return;
+            }
+        }
+        if (!BIBLE) { alert('성경 데이터가 로드되지 않았습니다.'); return; }
+
+        const para = BIBLE.books[CURRENT.book][CURRENT.chap].paras[CURRENT.paraIdx];
+        const pid  = `${CURRENT.book}|${CURRENT.chap}|${para.ref}`;
+
+        const titlePrefix =
+            kind==='unit'       ? '단위성경속 맥락' :
+            kind==='whole'      ? '전체성경속 맥락' :
+            kind==='commentary' ? '주석' :
+                                '내용요약';
+
+        const key =
+            kind==='unit'       ? STORAGE_UNIT_CTX :
+            kind==='whole'      ? STORAGE_WHOLE_CTX :
+            kind==='commentary' ? STORAGE_COMMENTARY :
+                                STORAGE_SUMMARY;
+
+        const map = getDocMap(key);
+        const doc = map[pid] || {
+            title: `${titlePrefix} — ${para.title||para.ref}`,
+            body:  (kind==='summary' ? '핵심 내용을 간결하게 요약해 적어주세요.' : ''),
+            images: [], date:''
+        };
+
+        // ✅ 2) 모달 UI 확실히 열기(겹치는 스타일/상태 초기화)
+        modalRef.textContent = `${CURRENT.book} ${CURRENT.chap}장 · ${para.title||para.ref} (${para.ref}) — ${titlePrefix}`;
+        sermonList.innerHTML = '';
+        sermonEditor.style.display = '';
+        sermonEditor.classList.add('context-editor');
+        modalWrap.style.display = 'flex';
+        modalWrap.setAttribute('aria-hidden','false');
+        modalFooterNew.style.display = 'none';
+
+        // 에디터 데이터 바인딩
+        sermonTitle.value = doc.title || '';
+        setBodyHTML(doc.body || '');
+
+        sermonThumbs.innerHTML = '';
+        (doc.images||[]).forEach(src=>{
+            const img=new Image(); img.src=src; sermonThumbs.appendChild(img);
+        });
+
+        // 상태 플래그
+        sermonEditor.dataset.editing = '';
+        sermonEditor.dataset.ctxType = kind;
+
+        // [선택] 단위 맥락일 때만 AI 버튼 보이기
+        const aiBtn = document.getElementById('aiFill');
+        if (aiBtn) {
+            aiBtn.style.display = (kind === 'unit') ? '' : 'none';
+            aiBtn.onclick = null;
+            if (kind === 'unit') {
+            aiBtn.onclick = async ()=>{ /* ← 기존 AI 핸들러 그대로 유지 */ };
+            }
         }
     }
-    if (!BIBLE) { alert('성경 데이터가 로드되지 않았습니다.'); return; }
-
-  const para = BIBLE.books[CURRENT.book][CURRENT.chap].paras[CURRENT.paraIdx];
-  const pid  = `${CURRENT.book}|${CURRENT.chap}|${para.ref}`;
-
-  const titlePrefix =
-    kind==='unit'       ? '단위성경속 맥락' :
-    kind==='whole'      ? '전체성경속 맥락' :
-    kind==='commentary' ? '주석' :
-                          '내용요약';
-
-  const key =
-    kind==='unit'       ? STORAGE_UNIT_CTX :
-    kind==='whole'      ? STORAGE_WHOLE_CTX :
-    kind==='commentary' ? STORAGE_COMMENTARY :
-                          STORAGE_SUMMARY;
-
-  const map = getDocMap(key);
-  const doc = map[pid] || {
-    title: `${titlePrefix} — ${para.title||para.ref}`,
-    body:  (kind==='summary' ? '핵심 내용을 간결하게 요약해 적어주세요.' : ''),
-    images: [], date:''
-  };
-
-  // ✅ 2) 모달 UI 확실히 열기(겹치는 스타일/상태 초기화)
-  modalRef.textContent = `${CURRENT.book} ${CURRENT.chap}장 · ${para.title||para.ref} (${para.ref}) — ${titlePrefix}`;
-  sermonList.innerHTML = '';
-  sermonEditor.style.display = '';
-  sermonEditor.classList.add('context-editor');
-  modalWrap.style.display = 'flex';
-  modalWrap.setAttribute('aria-hidden','false');
-  modalFooterNew.style.display = 'none';
-
-  // 에디터 데이터 바인딩
-  sermonTitle.value = doc.title || '';
-  setBodyHTML(doc.body || '');
-
-  sermonThumbs.innerHTML = '';
-  (doc.images||[]).forEach(src=>{
-    const img=new Image(); img.src=src; sermonThumbs.appendChild(img);
-  });
-
-  // 상태 플래그
-  sermonEditor.dataset.editing = '';
-  sermonEditor.dataset.ctxType = kind;
-
-  // [선택] 단위 맥락일 때만 AI 버튼 보이기
-  const aiBtn = document.getElementById('aiFill');
-  if (aiBtn) {
-    aiBtn.style.display = (kind === 'unit') ? '' : 'none';
-    aiBtn.onclick = null;
-    if (kind === 'unit') {
-      aiBtn.onclick = async ()=>{ /* ← 기존 AI 핸들러 그대로 유지 */ };
-    }
-  }
-}
 
     function renderSermonList(){
       const map = getSermonMap();
