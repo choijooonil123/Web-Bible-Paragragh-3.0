@@ -383,7 +383,7 @@
     // 개행을 보존해야 하므로 stripBlankLines 제거
     sermonBody.addEventListener('blur',()=>{}); 
     sermonBody.addEventListener('paste',()=>{});
-    
+
     // 선언부 정리
     // const sermonThumbs = el('sermonThumbs'), sermonImages = el('sermonImages');
     const sermonThumbs = null, sermonImages = null;
@@ -1385,7 +1385,7 @@
     const NSTATE = { blocks: [], history: [], cursor: -1, docId: null };
 
     function NwrapToggle(inner){
-        const parts = String(inner||'').split(/<br\\s*\\/?>/);
+        const parts = String(inner||'').split(/<br\s*\/?>/);
         const first = parts.shift() || '토글 제목';
         const body  = parts.join('<br>');
         return '<details open><summary>'+first+'</summary><div>'+body+'</div></details>';
