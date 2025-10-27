@@ -263,12 +263,10 @@
 
             <div id="sermonBody" class="rte" contenteditable="true" spellcheck="false" placeholder="내용"></div>
             <div class="editor-bar">
-                <input type="file" id="sermonImages" accept="image/*" multiple />
                 <div class="grow"></div>
                 <button id="editorSpeak" class="primary">낭독</button>
                 <button id="saveSermon" class="primary">저장</button>
             </div>
-            <div class="thumbs" id="sermonThumbs"></div>
         </div>
         <div id="modalFooterNew" class="footer" style="padding:10px 14px; border-top:1px solid var(--border)">
             <button id="newSermonBtn" class="primary">새 설교</button>
@@ -385,8 +383,16 @@
     // 개행을 보존해야 하므로 stripBlankLines 제거
     sermonBody.addEventListener('blur',()=>{}); 
     sermonBody.addEventListener('paste',()=>{});
+    
+    // 선언부 정리
+    // const sermonThumbs = el('sermonThumbs'), sermonImages = el('sermonImages');
+    const sermonThumbs = null, sermonImages = null;
 
-    const sermonThumbs = el('sermonThumbs'), sermonImages = el('sermonImages');
+    // 변경 이벤트 제거 혹은 가드
+    if (sermonImages) {
+    sermonImages.addEventListener('change', async ()=>{ /* ... */ });
+    }
+
     const editorSpeakBtn = el('editorSpeak');
     const modalFooterNew = el('modalFooterNew');
 
@@ -1010,58 +1016,64 @@
       arr.splice(idx,1); map[CURRENT.paraId] = arr; setSermonMap(map); renderSermonList();
     }
 
-    el('cancelEdit').onclick = ()=>{
-      if(sermonEditor.dataset.ctxType){
+    const cancelBtn = el('cancelEdit');
+    if (cancelBtn) {
+    cancelBtn.onclick = ()=>{
+        if(sermonEditor.dataset.ctxType){
         sermonEditor.dataset.ctxType = '';
-        modalWrap.style.display = 'none'; modalWrap.setAttribute('aria-hidden','true');
-      }else{
-        sermonEditor.style.display = 'none'; renderSermonList();
-      }
-      stopEditorSpeak(true);
+        modalWrap.style.display = 'none';
+        modalWrap.setAttribute('aria-hidden','true');
+        }else{
+        sermonEditor.style.display = 'none';
+        renderSermonList();
+        }
+        stopEditorSpeak(true);
     };
+    }
 
     el('saveSermon').onclick = ()=>{
-      sermonBody.value=stripBlankLines(sermonBody.value);
-      const title = sermonTitle.value.trim() || '(제목 없음)';
-      // const body  = sermonBody.value.trim();
+    // ❌ sermonBody.value = stripBlankLines(sermonBody.value);  ← 이 줄 삭제
 
-      // 개행, <br> 보존 버전
-      let body = getBodyHTML() || '';
-      // 필요 시 앞뒤 공백만 제거하되 내부 개행은 유지
-      body = body.replace(/^\s+|\s+$/g, '');
+    const title = sermonTitle.value.trim() || '(제목 없음)';
 
-      const imgs  = [...sermonThumbs.querySelectorAll('img')].map(img=>img.src);
-      const now   = new Date();
-      const date  = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+    // contenteditable의 HTML을 사용
+    let body = getBodyHTML() || '';
+    body = body.replace(/^\s+|\s+$/g, '');
 
-      const para  = BIBLE.books[CURRENT.book][CURRENT.chap].paras[CURRENT.paraIdx];
-      const pid   = `${CURRENT.book}|${CURRENT.chap}|${para.ref}`;
-      const ctxType = sermonEditor.dataset.ctxType || '';
+    // 파일 기능 제거 요구에 따라 항상 빈 배열 유지
+    const imgs = [];
 
-      if(ctxType){
+    const now   = new Date();
+    const date  = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+
+    const para  = BIBLE.books[CURRENT.book][CURRENT.chap].paras[CURRENT.paraIdx];
+    const pid   = `${CURRENT.book}|${CURRENT.chap}|${para.ref}`;
+    const ctxType = sermonEditor.dataset.ctxType || '';
+
+    if(ctxType){
         const key = ctxType==='unit'       ? STORAGE_UNIT_CTX
-                  : ctxType==='whole'      ? STORAGE_WHOLE_CTX
-                  : ctxType==='commentary' ? STORAGE_COMMENTARY
-                  :                          STORAGE_SUMMARY;
+                : ctxType==='whole'      ? STORAGE_WHOLE_CTX
+                : ctxType==='commentary' ? STORAGE_COMMENTARY
+                :                          STORAGE_SUMMARY;
         const map = getDocMap(key);
         map[pid] = { title, body, images: imgs, date };
         setDocMap(key, map);
-
         sermonEditor.dataset.ctxType = '';
         sermonEditor.classList.remove('context-editor');
         modalWrap.style.display = 'none'; modalWrap.setAttribute('aria-hidden','true');
         status(`저장됨: ${title}`);
         return;
-      }
+    }
 
-      const map = getSermonMap();
-      const arr = map[CURRENT.paraId] || [];
-      const editing = sermonEditor.dataset.editing;
-      if(editing!==''){ const i=+editing; if(arr[i]) arr[i] = {...arr[i], title, body, images:imgs, date}; }
-      else { arr.unshift({ id: crypto.randomUUID(), title, body, images: imgs, date }); }
-      map[CURRENT.paraId] = arr; setSermonMap(map);
-      sermonEditor.style.display = 'none'; renderSermonList(); status('설교가 저장되었습니다.');
+    const map = getSermonMap();
+    const arr = map[CURRENT.paraId] || [];
+    const editing = sermonEditor.dataset.editing;
+    if(editing!==''){ const i=+editing; if(arr[i]) arr[i] = {...arr[i], title, body, images: imgs, date}; }
+    else { arr.unshift({ id: (crypto.randomUUID?crypto.randomUUID():String(Date.now())), title, body, images: imgs, date }); }
+    map[CURRENT.paraId] = arr; setSermonMap(map);
+    sermonEditor.style.display = 'none'; renderSermonList(); status('설교가 저장되었습니다.');
     };
+
 
     sermonImages.addEventListener('change', async ()=>{
       const files = [...sermonImages.files||[]];
@@ -1921,12 +1933,13 @@
 
     /* ==== [모달] 고정영역 높이만큼 본문 상단 패딩 자동 보정 ==== */
     function adjustModalEditorPadding() {
-    /* const wrap = document.getElementById('modalControlsWrap'); */
+    const wrap = document.getElementById('modalControlsWrap'); // 주석 해제
     const body = document.querySelector('#sermonEditor .rte');
-    if (!wrap || !body) return;
+    if (!wrap || !body) return; // 둘 중 하나라도 없으면 그냥 종료
     const h = wrap.offsetHeight || 0;
-    body.style.setProperty('--editor-pad-top', (h + 8) + 'px'); // 여유 8px
+    body.style.setProperty('--editor-pad-top', (h + 8) + 'px');
     }
+
 
     /* 화면 크기 바뀔 때마다 재계산 */
     window.addEventListener('resize', adjustModalEditorPadding);
