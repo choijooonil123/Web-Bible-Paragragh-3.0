@@ -178,35 +178,53 @@
     border-bottom: 1px solid var(--border);
     }
 
-        /* 모달 편집기 도구 접기 */
+    /* 
+
+    /* 모달 편집기 도구 접기 */
+    /* 
     #modalControlsWrap{
     overflow:hidden;
     transition:max-height .25s ease, opacity .25s ease;
     max-height:600px; opacity:1;
     }
+
     #modalControlsWrap.collapsed{ max-height:0; opacity:0 }
     #modalToggleControlsBtn{ min-width:96px }
 
-        /* ✅ 설교 제목 + 툴바 영역을 항상 상단에 고정 */
+    /* ✅ 설교 제목 + 툴바 영역을 항상 상단에 고정 */
+    
+    /*
+
     #modalControlsWrap, 
     .controls-wrap {
     position: sticky;
     top: 0;                     /* 화면 맨 위에 붙임 */
+
+    /*
     z-index: 20;                /* 본문보다 위에 표시 */
+
+    /*
     background: var(--panel);   /* 배경색 유지 */
+    /*
     border-bottom: 1px solid var(--border);
     padding-bottom: 6px;
     }
 
     /* ✅ 고정된 툴바(제목 + 버튼 영역) */
+    /*
     #modalControlsWrap {
     position: sticky;          /* 스크롤해도 화면 위에 고정 */
+    /*
     top: 56px;                 /* 모달 헤더 높이만큼 띄움 (헤더 높이가 다르면 조정하세요) */
+    /*
     z-index: 50;
     background: var(--panel);  /* 배경색 유지 */
+    /*
     border-bottom: 1px solid var(--border);
     padding-bottom: 6px;
     }
+
+    */
 
     /* ✅ 본문 영역(#sermonEditor .rte)이 가려지지 않도록 여백 확보 */
     #sermonEditor .rte {
@@ -217,15 +235,18 @@
     }
 
     /* 모달 편집기 상단 RTE 툴바 숨김 */
+    /*
     #modalControlsWrap #rteToolbar { display:none !important; }
 
     .toolbar{ display:none !important; }
 
     /* ===== 모달 편집기(sermonEditor) 안 툴바 숨김 ===== */
+    /*
     #sermonEditor #modalControlsWrap #rteToolbar {
     display: none !important;
     }
-
+    
+    */
 
   </style>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600&family=Nanum+Myeongjo&display=swap" rel="stylesheet">
@@ -275,42 +296,37 @@
     <div id="modalWrap" class="modal-backdrop" aria-hidden="true">
     <div class="modal">
         <div class="head">
-        <strong id="modalTitle">단락 성경</strong>
-        <span class="muted" id="modalRef">—</span>
-        <div class="grow"></div>
-        <button id="closeModal">닫기</button>
-        </div>
-
-        <div class="list" id="sermonList"></div>
-
-        <div class="editor" id="sermonEditor" style="display:none">
-        <div id="modalControlsWrap">
-            <button type="button" id="rteBold"><b>굵게</b> (Alt+B)</button>
-            <button type="button" id="rteItalic"><i>기울임</i> (Alt+I)</button>
-            <button type="button" id="rteUnderline"><u>밑줄</u> (Alt+U)</button>
-            <label class="pill" style="display:inline-flex;align-items:center;gap:6px">
-            <span class="muted">글자색</span>
-            <input id="rteColor" type="color" value="#ffffff" style="width:32px;height:28px;padding:0;border-radius:8px">
-            <button type="button" id="rteApplyColor">적용 (Alt+C)</button>
-            </label>
-        </div>
-
-        <!-- 🔁 textarea → contenteditable -->
-        <div id="sermonBody" class="rte" contenteditable="true" spellcheck="false" placeholder="내용"></div>
-
-        <div class="editor-bar">
-            <input type="file" id="sermonImages" accept="image/*" multiple />
+            <strong id="modalTitle">단락 성경</strong>
+            <span class="muted" id="modalRef">—</span>
             <div class="grow"></div>
-            <button id="editorSpeak" class="primary">낭독</button>
-            <button id="saveSermon" class="primary">저장</button>
-            <button id="cancelEdit">취소</button>
+            <button id="closeModal">닫기</button>
         </div>
-
-        <div class="thumbs" id="sermonThumbs"></div>
+        <div class="list" id="sermonList"></div>
+        <div class="editor" id="sermonEditor" style="display:none">
+            <!--
+            <div id="modalControlsWrap">
+                <button type="button" id="rteBold"><b>굵게</b> (Alt+B)</button>
+                <button type="button" id="rteItalic"><i>기울임</i> (Alt+I)</button>
+                <button type="button" id="rteUnderline"><u>밑줄</u> (Alt+U)</button>
+                <label class="pill" style="display:inline-flex;align-items:center;gap:6px">
+                    <span class="muted">글자색</span>
+                    <input id="rteColor" type="color" value="#ffffff" style="width:32px;height:28px;padding:0;border-radius:8px">
+                    <button type="button" id="rteApplyColor">적용 (Alt+C)</button>
+                </label>
+            </div>
+            -->
+            <div id="sermonBody" class="rte" contenteditable="true" spellcheck="false" placeholder="내용"></div>
+            <div class="editor-bar">
+                <input type="file" id="sermonImages" accept="image/*" multiple />
+                <div class="grow"></div>
+                <button id="editorSpeak" class="primary">낭독</button>
+                <button id="saveSermon" class="primary">저장</button>
+                <button id="cancelEdit">취소</button>
+            </div>
+            <div class="thumbs" id="sermonThumbs"></div>
         </div>
-
         <div id="modalFooterNew" class="footer" style="padding:10px 14px; border-top:1px solid var(--border)">
-        <button id="newSermonBtn" class="primary">새 설교</button>
+            <button id="newSermonBtn" class="primary">새 설교</button>
         </div>
     </div>
     </div>
@@ -1999,7 +2015,7 @@
 
     /* ==== [모달] 고정영역 높이만큼 본문 상단 패딩 자동 보정 ==== */
     function adjustModalEditorPadding() {
-    const wrap = document.getElementById('modalControlsWrap');
+    /* const wrap = document.getElementById('modalControlsWrap'); */
     const body = document.querySelector('#sermonEditor .rte');
     if (!wrap || !body) return;
     const h = wrap.offsetHeight || 0;
