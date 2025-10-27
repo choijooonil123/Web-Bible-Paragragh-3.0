@@ -178,54 +178,6 @@
     border-bottom: 1px solid var(--border);
     }
 
-    /* 
-
-    /* 모달 편집기 도구 접기 */
-    /* 
-    #modalControlsWrap{
-    overflow:hidden;
-    transition:max-height .25s ease, opacity .25s ease;
-    max-height:600px; opacity:1;
-    }
-
-    #modalControlsWrap.collapsed{ max-height:0; opacity:0 }
-    #modalToggleControlsBtn{ min-width:96px }
-
-    /* ✅ 설교 제목 + 툴바 영역을 항상 상단에 고정 */
-    
-    /*
-
-    #modalControlsWrap, 
-    .controls-wrap {
-    position: sticky;
-    top: 0;                     /* 화면 맨 위에 붙임 */
-
-    /*
-    z-index: 20;                /* 본문보다 위에 표시 */
-
-    /*
-    background: var(--panel);   /* 배경색 유지 */
-    /*
-    border-bottom: 1px solid var(--border);
-    padding-bottom: 6px;
-    }
-
-    /* ✅ 고정된 툴바(제목 + 버튼 영역) */
-    /*
-    #modalControlsWrap {
-    position: sticky;          /* 스크롤해도 화면 위에 고정 */
-    /*
-    top: 56px;                 /* 모달 헤더 높이만큼 띄움 (헤더 높이가 다르면 조정하세요) */
-    /*
-    z-index: 50;
-    background: var(--panel);  /* 배경색 유지 */
-    /*
-    border-bottom: 1px solid var(--border);
-    padding-bottom: 6px;
-    }
-
-    */
-
     /* ✅ 본문 영역(#sermonEditor .rte)이 가려지지 않도록 여백 확보 */
     #sermonEditor .rte {
     flex: 1 1 auto;
@@ -233,20 +185,6 @@
     padding-top: var(--editor-pad-top, 0px);
     scroll-padding-top: var(--editor-pad-top, 0px);
     }
-
-    /* 모달 편집기 상단 RTE 툴바 숨김 */
-    /*
-    #modalControlsWrap #rteToolbar { display:none !important; }
-
-    .toolbar{ display:none !important; }
-
-    /* ===== 모달 편집기(sermonEditor) 안 툴바 숨김 ===== */
-    /*
-    #sermonEditor #modalControlsWrap #rteToolbar {
-    display: none !important;
-    }
-    
-    */
 
   </style>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600&family=Nanum+Myeongjo&display=swap" rel="stylesheet">
@@ -329,7 +267,6 @@
                 <div class="grow"></div>
                 <button id="editorSpeak" class="primary">낭독</button>
                 <button id="saveSermon" class="primary">저장</button>
-                <button id="cancelEdit">취소</button>
             </div>
             <div class="thumbs" id="sermonThumbs"></div>
         </div>
@@ -1400,6 +1337,42 @@
     overflow: auto;
     }
 
+    /* === Notion-style Sermon Editor (blocks) === */
+    .notion-header{display:flex;align-items:center;gap:8px;margin-top:8px}
+    .notion-header .title{flex:1 1 auto;background:#161922;color:#e6e8ef;border:1px solid #2a3040;border-radius:8px;padding:10px 12px;font-weight:700}
+    .notion-header .meta{display:flex;gap:8px;align-items:center}
+    .notion-badge{font-size:11px;color:#9aa0ab}
+
+    #editorRoot{max-width:880px;margin:12px auto 8px;padding:0 6px}
+    .editor-block{position:relative;display:flex;gap:10px;padding:2px 0}
+    .editor-block .handle{user-select:none;cursor:grab;opacity:.5;padding:2px 0 0 0}
+    .editor-block .content{flex:1;outline:none;white-space:pre-wrap}
+    .editor-block[data-type="h1"] .content{font-size:28px;font-weight:800}
+    .editor-block[data-type="h2"] .content{font-size:24px;font-weight:800}
+    .editor-block[data-type="h3"] .content{font-size:20px;font-weight:700}
+    .editor-block[data-type="quote"]{border-left:3px solid #5a6; padding-left:10px; opacity:.95}
+    .editor-block[data-type="callout"]{background:#3a3f4e33;border:1px solid #444;border-radius:12px;padding:10px}
+    .editor-block[data-type="code"] .content{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:#0b0d13;border:1px solid #252a36;border-radius:12px;padding:10px}
+    .editor-block[data-type="todo"] .content{display:flex;gap:8px}
+    .editor-block[data-type="divider"] .content{border-bottom:1px solid #333;height:1px}
+    .editor-block[data-type="toggle"] .content summary{cursor:pointer}
+    .editor-block .progress{position:absolute;left:0;bottom:-2px;height:2px;background:#6ea8fe;opacity:.9;transition:width .05s linear}
+
+    .bubble{position:absolute;padding:6px;border:1px solid #333;border-radius:12px;background:#1c1f2a;display:flex;gap:6px}
+    .bubble.hidden{display:none}
+    .bubble button{border:1px solid #333;background:#222;color:#eee;border-radius:8px;padding:2px 6px}
+
+    .slash{position:fixed;inset:auto auto 0 0;max-height:260px;overflow:auto;background:#1c1f2a;border:1px solid #333;border-radius:12px;min-width:260px;padding:6px}
+    .slash.hidden{display:none}
+    .slash .item{padding:6px 8px;border-radius:8px;display:flex;gap:8px;align-items:center}
+    .slash .item.active,.slash .item:hover{background:#2a2f3d}
+
+    .notion-footer{padding:6px 12px;border-top:1px solid #252a36;background:#161922;position:sticky;bottom:0}
+    #traceLog{font:12px/1.4 ui-monospace,Menlo,Consolas,monospace;max-height:180px;overflow:auto;white-space:pre-wrap}
+
+    /* 기존 RTE(#b)와 병행: 기본은 노션 에디터 표시, RTE는 숨김 */
+    #b.rte{display:none !important}
+
     </style>
     </head>
     <body class="context-editor">
@@ -1432,6 +1405,41 @@
         <span class="sep"></span>
     </div>
     </div>
+    <!-- === Notion-style Sermon Editor UI === -->
+    <div class="notion-header">
+    <input id="neTitle" class="title" placeholder="제목을 입력하세요" />
+    <div class="meta">
+        <button id="nePublish" class="primary">게시</button>
+        <button id="neStt">🎙 STT</button>
+    </div>
+    </div>
+
+    <!-- 선택 툴바 -->
+    <div id="neBubble" class="bubble hidden">
+    <button data-mark="bold"><b>B</b></button>
+    <button data-mark="italic"><i>I</i></button>
+    <button data-mark="underline"><u>U</u></button>
+    <button data-mark="strike"><s>S</s></button>
+    <button data-mark="code">`code`</button>
+    <button data-mark="highlight">HL</button>
+    <button data-action="link">🔗</button>
+    </div>
+
+    <!-- / 슬래시 메뉴 -->
+    <div id="neSlash" class="slash hidden"></div>
+
+    <!-- 블록 에디터 루트 -->
+    <div id="editorRoot" aria-label="Sermon Editor"></div>
+
+    <!-- STT 로그 -->
+    <div class="notion-footer">
+    <div class="notion-badge" id="neAutosave">자동저장 대기중…</div>
+    <details style="margin-top:6px">
+        <summary>🎧 Sermon Tracer 로그/타임라인</summary>
+        <div id="traceLog"></div>
+    </details>
+    </div>
+
     <div id="b" class="rte" contenteditable="true" spellcheck="false"></div>
     <div class="thumbs" id="th"></div>
     <input type="file" id="imgs" accept="image/*" multiple style="margin-top:4px">
@@ -1453,6 +1461,316 @@
         const $ = id => w.document.getElementById(id);
 
         const t=$('t'), b=$('b'), th=$('th'), imgs=$('imgs');
+
+        /* ===== Notion-style Blocks: 상태/유틸 ===== */
+        const N$ = sel => w.document.querySelector(sel);
+        const N$$= sel => Array.from(w.document.querySelectorAll(sel));
+        const Nuid= () => Math.random().toString(36).slice(2,10);
+
+        const neTitle   = N$('#neTitle');
+        const neRoot    = N$('#editorRoot');
+        const neBubble  = N$('#neBubble');
+        const neSlash   = N$('#neSlash');
+        const neAutosave= N$('#neAutosave');
+        const neSttBtn  = N$('#neStt');
+        const nePubBtn  = N$('#nePublish');
+        const neTrace   = N$('#traceLog');
+
+        const NSTATE = { blocks: [], history: [], cursor: -1, docId: null };
+
+        /* 기존 meta.body(HTML) → 기본 블록 1개로 초기화 */
+        function initBlocksFromHTML(html){
+        if(!html || /^\s*$/.test(html)){
+            NSTATE.blocks = [{id:Nuid(), type:'p', html:'여기에 설교를 작성하세요.'}];
+        }else{
+            NSTATE.blocks = [{id:Nuid(), type:'p', html: html}];
+        }
+        }
+
+        /* 렌더 */
+        function Nrender(){
+        neRoot.innerHTML = '';
+        for(const b of NSTATE.blocks){
+            const el = w.document.createElement('div');
+            el.className = 'editor-block';
+            el.dataset.id = b.id; el.dataset.type = b.type;
+            el.innerHTML = `
+            <div class="handle">⋮⋮</div>
+            <div class="content" contenteditable="true">${b.type==='toggle'? NwrapToggle(b.html) : b.html}</div>
+            <div class="progress" style="width:0"></div>
+            `;
+            neRoot.appendChild(el);
+        }
+        NbindBlockEvents();
+        }
+        function NwrapToggle(inner){
+        const [first,...rest] = String(inner||'').split(/<br\s*\/?>(.*)?/);
+        const body = rest.join('<br>')||'';
+        return `<details open><summary>${first||'토글 제목'}</summary><div>${body}</div></details>`;
+        }
+
+        function NindexById(id){ return NSTATE.blocks.findIndex(b=>b.id===id); }
+        function NgetType(block){ return block?.dataset?.type || 'p'; }
+        function NsaveBlockHTML(block){
+        const i = NindexById(block.dataset.id);
+        if(i<0) return;
+        const content = block.querySelector('.content');
+        NSTATE.blocks[i].html = content.innerHTML;
+        }
+
+        /* 블록 이벤트 */
+        function NbindBlockEvents(){
+        N$$('.editor-block').forEach(block =>{
+            const content = block.querySelector('.content');
+
+            content.addEventListener('keydown', e=>{
+            if(e.key==='/' && !e.shiftKey){ NshowSlash(block); return; }
+            if(e.key==='Enter'){
+                if(NgetType(block)==='code') return;
+                e.preventDefault(); NsplitBlock(block);
+            }
+            if((e.metaKey||e.ctrlKey)&&!e.shiftKey&&e.key.toLowerCase()==='z'){ e.preventDefault(); Nundo(); }
+            if(((e.metaKey||e.ctrlKey)&&e.shiftKey&&e.key.toLowerCase()==='z')||((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='y')){ e.preventDefault(); Nredo(); }
+            });
+
+            content.addEventListener('input', ()=>{ NsaveBlockHTML(block); NscheduleAutosave(); });
+            content.addEventListener('mouseup', NshowBubbleMaybe);
+            content.addEventListener('keyup',   NshowBubbleMaybe);
+        });
+
+        N$$('.editor-block .handle').forEach(h=>{
+            h.addEventListener('click',()=>{
+            const block = h.closest('.editor-block');
+            const idx = NindexById(block.dataset.id);
+            if(idx<=0) return;
+            const t = NSTATE.blocks[idx]; NSTATE.blocks[idx]=NSTATE.blocks[idx-1]; NSTATE.blocks[idx-1]=t;
+            Nrender(); NscheduleAutosave();
+            });
+        });
+        }
+
+        /* 블록 쪼개기(간단 오프셋) */
+        function NsplitBlock(block){
+        const i = NindexById(block.dataset.id); if(i<0) return;
+        const sel = w.getSelection(); if(!sel.rangeCount) return;
+        const range = sel.getRangeAt(0);
+        const text = block.querySelector('.content').textContent || '';
+        const off  = range.startOffset;
+        const pre  = text.slice(0, off);
+        const post = text.slice(off);
+        NSTATE.blocks[i].html = Nescape(pre);
+        NSTATE.blocks.splice(i+1,0,{id:Nuid(), type:'p', html: Nescape(post||'')});
+        Nrender();
+        const next = neRoot.querySelector(`.editor-block[data-id="${NSTATE.blocks[i+1].id}"] .content`);
+        if(next) { next.focus(); const rr=w.document.createRange(); rr.selectNodeContents(next); rr.collapse(false); const ss=w.getSelection(); ss.removeAllRanges(); ss.addRange(rr); }
+        NpushHistory();
+        }
+        function Nescape(s){ const t=w.document.createElement('div'); t.textContent=String(s); return t.innerHTML; }
+
+        /* 선택툴바 */
+        function NshowBubbleMaybe(){
+        const sel = w.getSelection();
+        if(!sel || sel.isCollapsed){ neBubble.classList.add('hidden'); return; }
+        const rect = sel.getRangeAt(0).getBoundingClientRect();
+        neBubble.style.left = (rect.left + w.scrollX) + 'px';
+        neBubble.style.top  = (rect.top  + w.scrollY - 42) + 'px';
+        neBubble.classList.remove('hidden');
+        }
+        neBubble.addEventListener('mousedown', e=> e.preventDefault());
+        neBubble.addEventListener('click', e=>{
+        const btn = e.target.closest('button'); if(!btn) return;
+        const mark = btn.dataset.mark; const act = btn.dataset.action;
+        if(mark){
+            w.document.execCommand(mark==='highlight'?'backColor':mark, false, mark==='highlight'? '#6655007a': null);
+        } else if(act==='link'){
+            const url = w.prompt('링크 URL'); if(url) w.document.execCommand('createLink', false, url);
+        }
+        NshowBubbleMaybe(); NscheduleAutosave();
+        });
+
+        /* 슬래시 메뉴 */
+        const N_SLASH = [
+        {type:'p', label:'텍스트'},
+        {type:'h1', label:'제목 1'},
+        {type:'h2', label:'제목 2'},
+        {type:'h3', label:'제목 3'},
+        {type:'todo', label:'체크리스트'},
+        {type:'ul', label:'불릿 리스트'},
+        {type:'ol', label:'번호 리스트'},
+        {type:'quote', label:'인용'},
+        {type:'callout', label:'콜아웃'},
+        {type:'divider', label:'구분선'},
+        {type:'code', label:'코드 블록'},
+        {type:'toggle', label:'토글 블록'},
+        {type:'img', label:'이미지(링크)'},
+        ];
+        let NslashTarget = null;
+        function NshowSlash(block){
+        NslashTarget = block;
+        const rect = block.getBoundingClientRect();
+        neSlash.style.left = (rect.left + w.scrollX + 20) + 'px';
+        neSlash.style.top  = (rect.top  + w.scrollY + 20) + 'px';
+        neSlash.innerHTML = N_SLASH.map((it,i)=>`<div class="item" data-i="${i}">${it.label}</div>`).join('');
+        neSlash.classList.remove('hidden');
+        }
+        neSlash.addEventListener('click', e=>{
+        const item = e.target.closest('.item'); if(!item) return;
+        const i = +item.dataset.i; NapplySlash(N_SLASH[i]);
+        neSlash.classList.add('hidden');
+        });
+        w.document.addEventListener('keydown', e=>{ if(e.key==='Escape') neSlash.classList.add('hidden'); });
+
+        function NapplySlash(it){
+        if(!NslashTarget) return;
+        const id = NslashTarget.dataset.id; const idx = NindexById(id); if(idx<0) return;
+        if(it.type==='divider'){
+            NSTATE.blocks[idx] = {id, type:'divider', html:''};
+        } else if(it.type==='img'){
+            const url = w.prompt('이미지 URL'); if(url){ NSTATE.blocks[idx].html = `<img src="${url}" style="max-width:100%">`; }
+        } else if(it.type==='todo'){
+            NSTATE.blocks[idx] = {id, type:'todo', html:`<input type="checkbox"> 할 일`};
+        } else if(it.type==='ul' || it.type==='ol'){
+            NSTATE.blocks[idx] = {id, type:it.type, html:`<${it.type}><li>첫 번째</li></${it.type}>`};
+        } else if(it.type==='toggle'){
+            NSTATE.blocks[idx] = {id, type:'toggle', html:'토글 제목<br>토글 내용'};
+        } else {
+            NSTATE.blocks[idx].type = it.type;
+        }
+        Nrender(); NscheduleAutosave();
+        }
+
+        /* 히스토리 */
+        function NpushHistory(){ NSTATE.history = NSTATE.history.slice(0, NSTATE.cursor+1); NSTATE.history.push(JSON.stringify(NSTATE.blocks)); NSTATE.cursor = NSTATE.history.length-1; }
+        function Nundo(){ if(NSTATE.cursor>0){ NSTATE.cursor--; NSTATE.blocks = JSON.parse(NSTATE.history[NSTATE.cursor]); Nrender(); } }
+        function Nredo(){ if(NSTATE.cursor<NSTATE.history.length-1){ NSTATE.cursor++; NSTATE.blocks = JSON.parse(NSTATE.history[NSTATE.cursor]); Nrender(); } }
+
+        /* 직렬화: blocks → HTML(저장/게시에 사용) */
+        function NblocksToHTML(){
+        const strip = (html)=>{ const t=w.document.createElement('div'); t.innerHTML=html; return t.textContent||t.innerText||''; };
+        return NSTATE.blocks.map(b=>{
+            switch(b.type){
+            case 'h1': return `<h2>${b.html}</h2>`;
+            case 'h2': return `<h3>${b.html}</h3>`;
+            case 'h3': return `<h4>${b.html}</h4>`;
+            case 'quote': return `<blockquote>${b.html}</blockquote>`;
+            case 'divider': return `<hr/>`;
+            case 'ul':
+            case 'ol':
+            case 'code':
+            case 'todo':
+            case 'toggle':
+            case 'callout':
+            case 'p':
+            default: return `<div>${b.html}</div>`;
+            }
+        }).join('');
+        }
+
+        /* 자동저장 */
+        let NsaveTimer=null;
+        function NscheduleAutosave(){
+        clearTimeout(NsaveTimer);
+        neAutosave.textContent = '입력 중…';
+        NsaveTimer = setTimeout(()=>{
+            try{
+            const key = `wbps.sermon.draft.blocks.${(meta.paraId||'')}.${(meta.idx||0)}`;
+            const payload = { title: neTitle.value||'', blocks:NSTATE.blocks, ts: Date.now() };
+            w.localStorage.setItem(key, JSON.stringify(payload));
+            neAutosave.textContent = '자동저장됨';
+            }catch(_){ neAutosave.textContent = '자동저장 실패(용량)'; }
+        }, 500);
+        }
+
+        /* ===== STT Tracer ===== */
+        (function(){
+        if(!('webkitSpeechRecognition' in w) && !('SpeechRecognition' in w)){ console.warn('STT 미지원'); return; }
+        const SR = w.SpeechRecognition || w.webkitSpeechRecognition;
+        const rec = new SR(); rec.lang='ko-KR'; rec.interimResults=true; rec.continuous=true;
+
+        let activeBlock=null, accText='', startedAt=null;
+
+        function getActive(){ const sel=w.getSelection(); const n=sel?.anchorNode; const el=(n?.nodeType===1?n:(n?.parentElement)); return el?.closest?.('.editor-block') || neRoot.querySelector('.editor-block'); }
+        function setProgress(block, ratio){ const bar=block?.querySelector('.progress'); if(bar) bar.style.width = Math.max(0,Math.min(100,ratio*100)) + '%'; }
+        function plain(html){ const t=w.document.createElement('div'); t.innerHTML=html||''; return t.textContent||''; }
+        function sim(a,b){ a=a.replace(/\s+/g,''); b=b.replace(/\s+/g,''); const L=Math.max(a.length,1); let m=0; for(let i=0;i<Math.min(a.length,b.length);i++){ if(a[i]===b[i]) m++; } return m/L; }
+        function nextBlock(block){ const nx = block?.nextElementSibling?.classList.contains('editor-block')? block.nextElementSibling : null; return nx; }
+
+        neSttBtn?.addEventListener('click', ()=>{
+            if(neSttBtn.dataset.on==='1'){ rec.stop(); neSttBtn.dataset.on='0'; neSttBtn.textContent='🎙 STT'; return; }
+            activeBlock = getActive(); if(!activeBlock){ w.alert('블록을 선택하세요'); return; }
+            accText=''; startedAt=Date.now(); rec.start(); neSttBtn.dataset.on='1'; neSttBtn.textContent='⏸ 중지';
+        });
+
+        rec.onresult = (ev)=>{
+            if(!activeBlock) return;
+            const r = ev.results[ev.results.length-1]; const txt=r[0].transcript; const isFinal=r.isFinal;
+            accText += (isFinal? txt+' ' : txt);
+            const base = plain(activeBlock.querySelector('.content').innerHTML);
+            const s = sim(base, accText); setProgress(activeBlock, s);
+
+            const t = ((Date.now()-startedAt)/1000).toFixed(1);
+            neTrace.textContent += `t=${t}s s=${(s*100).toFixed(0)}% : ${txt}\n`;
+            neTrace.scrollTop = neTrace.scrollHeight;
+
+            if(isFinal && s>0.95){
+            const nb = nextBlock(activeBlock);
+            if(nb){ activeBlock = nb; accText=''; startedAt=Date.now(); setProgress(nb, 0); }
+            }
+        };
+        rec.onend   = ()=>{ if(neSttBtn.dataset.on==='1'){ rec.start(); } };
+        rec.onerror = (e)=> console.warn('STT 오류', e.error);
+        })();
+
+        /* ===== 게시(Publish) — Firebase 있으면 사용 ===== */
+        nePubBtn?.addEventListener('click', async ()=>{
+        try{
+            if(typeof w.firebase === 'undefined'){ w.alert('Firebase 미탑재: 게시 기능을 사용하려면 SDK/초기화가 필요합니다.'); return; }
+            const user = w.firebase.auth().currentUser;
+            if(!user){ w.alert('로그인 후 게시 가능합니다.'); return; }
+
+            const db = w.firebase.firestore();
+            const docRef = NSTATE.docId ? db.collection('sermons').doc(NSTATE.docId) : db.collection('sermons').doc();
+            const payload = {
+            title: (neTitle.value||'무제'),
+            blocks: NSTATE.blocks,
+            owner: user.uid,
+            updatedAt: w.firebase.firestore.FieldValue.serverTimestamp(),
+            createdAt: w.firebase.firestore.FieldValue.serverTimestamp(),
+            status: 'published'
+            };
+            await docRef.set(payload, {merge:true});
+            NSTATE.docId = docRef.id;
+            const url = w.location.origin + '/viewer.html?id=' + docRef.id;
+            w.alert('게시 완료!\n' + url);
+        }catch(err){ console.error(err); w.alert('게시 실패: '+err.message); }
+        });
+
+        /* ===== 초기화: meta → 제목/본문/블록 ===== */
+        (function Ninit(){
+        neTitle.value = (meta.title||'');
+        initBlocksFromHTML(meta.body||'');
+        Nrender(); NpushHistory();
+
+        // 기존 "저장(s)" 버튼을 노션 블록 기준으로 재정의
+        const saveBtn = w.document.getElementById('s');
+        if(saveBtn){
+            saveBtn.onclick = ()=>{
+            const images=[...w.document.getElementById('th').querySelectorAll('img')].map(i=>i.src);
+            const html = NblocksToHTML();       // ← 블록을 HTML로 합쳐 저장
+            window.postMessage({
+                type:'sermon-save',
+                title:(neTitle.value||'').trim()||'(제목 없음)',
+                body: html,
+                images
+            },'*');
+            w.close();
+            };
+        }
+
+        // 닫기/삭제도 동일하게 동작 (기존 로직 유지)
+        })();
+
+
         const refEl=$('ref'), dateEl=$('date'), draftState=$('draftState');
 
         // 🔹 제목 / 본문 / 이미지 초기 주입
@@ -1602,9 +1920,6 @@
             scheduleDraft();
         }
 
-
-
-        // ===== Alt 단축키 (b/i/u/e/c/f) : 설교 편집 본문(#b) 전용 =====
         // ===== Alt 단축키 (b/i/u/e/c/f) : 설교 편집 본문(#b) 전용 =====
         (function initEditorHotkeys(){
             const colorInput = $('color'); // 이미 toolbar에 존재
