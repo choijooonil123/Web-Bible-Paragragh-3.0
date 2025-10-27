@@ -273,47 +273,48 @@
     </div>
 
     <div id="modalWrap" class="modal-backdrop" aria-hidden="true">
-        <div class="modal">
-            <div class="head">
-            <strong id="modalTitle">단락 성경</strong>
-            <span class="muted" id="modalRef">—</span>
+    <div class="modal">
+        <div class="head">
+        <strong id="modalTitle">단락 성경</strong>
+        <span class="muted" id="modalRef">—</span>
+        <div class="grow"></div>
+        <button id="closeModal">닫기</button>
+        </div>
+
+        <div class="list" id="sermonList"></div>
+
+        <div class="editor" id="sermonEditor" style="display:none">
+        <div id="modalControlsWrap">
+            <button type="button" id="rteBold"><b>굵게</b> (Alt+B)</button>
+            <button type="button" id="rteItalic"><i>기울임</i> (Alt+I)</button>
+            <button type="button" id="rteUnderline"><u>밑줄</u> (Alt+U)</button>
+            <label class="pill" style="display:inline-flex;align-items:center;gap:6px">
+            <span class="muted">글자색</span>
+            <input id="rteColor" type="color" value="#ffffff" style="width:32px;height:28px;padding:0;border-radius:8px">
+            <button type="button" id="rteApplyColor">적용 (Alt+C)</button>
+            </label>
+        </div>
+
+        <!-- 🔁 textarea → contenteditable -->
+        <div id="sermonBody" class="rte" contenteditable="true" spellcheck="false" placeholder="내용"></div>
+
+        <div class="editor-bar">
+            <input type="file" id="sermonImages" accept="image/*" multiple />
             <div class="grow"></div>
-            <button id="closeModal">닫기</button>
-            </div>
+            <button id="editorSpeak" class="primary">낭독</button>
+            <button id="saveSermon" class="primary">저장</button>
+            <button id="cancelEdit">취소</button>
+        </div>
 
-            <div class="list" id="sermonList"></div>
+        <div class="thumbs" id="sermonThumbs"></div>
+        </div>
 
-            <div class="editor" id="sermonEditor" style="display:none">
-            <div id="modalControlsWrap">
-                <button type="button" id="rteBold"><b>굵게</b> (Alt+B)</button>
-                <button type="button" id="rteItalic"><i>기울임</i> (Alt+I)</button>
-                <button type="button" id="rteUnderline"><u>밑줄</u> (Alt+U)</button>
-                <label class="pill" style="display:inline-flex;align-items:center;gap:6px">
-                <span class="muted">글자색</span>
-                <input id="rteColor" type="color" value="#ffffff" style="width:32px;height:28px;padding:0;border-radius:8px">
-                <button type="button" id="rteApplyColor">적용 (Alt+C)</button>
-                </label>
-            </div>
-
-            <!-- 🔁 교체: textarea → div[contenteditable] -->
-            <div id="sermonBody" class="rte" contenteditable="true" spellcheck="false" placeholder="내용"></div>
-
-            <div class="editor-bar">
-                <input type="file" id="sermonImages" accept="image/*" multiple />
-                <div class="grow"></div>
-                <button id="editorSpeak" class="primary">낭독</button>
-                <button id="saveSermon" class="primary">저장</button>
-                <button id="cancelEdit">취소</button>
-            </div>
-
-            <div class="thumbs" id="sermonThumbs"></div>
-            </div>
-
-            <div id="modalFooterNew" class="footer" style="padding:10px 14px; border-top:1px solid var(--border)">
-            <button id="newSermonBtn" class="primary">새 설교</button>
-            </div>
+        <div id="modalFooterNew" class="footer" style="padding:10px 14px; border-top:1px solid var(--border)">
+        <button id="newSermonBtn" class="primary">새 설교</button>
         </div>
     </div>
+    </div>
+
 
 
   <script>
