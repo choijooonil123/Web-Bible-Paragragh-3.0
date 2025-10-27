@@ -1645,101 +1645,115 @@ main { height:auto !important; overflow:visible !important; }
 </body>
 </html>`;
 
-      w.document.open(); w.document.write(popupHTML); w.document.close();
+<script>
+// ── 팝업창 작성 직후 메시지 핸들러(저장/삭제 반영) ───────────────────────────────
+w.document.open();
+w.document.write(popupHTML);
+w.document.close();
 
-      // 부모창 메시지 핸들러 (저장/삭제 반영)
-      const onMsg = (ev)=>{
-        const data = ev?.data || {};
-        if(!data.type) return;
+const onMsg = (ev) => {
+  const data = ev?.data || {};
+  if (!data.type) return;
 
-        const map2 = getSermonMap();
-        const arr2 = map2[CURRENT.paraId] || [];
+  const map2 = getSermonMap();
+  const arr2 = map2[CURRENT.paraId] || [];
 
-        if(data.type === 'sermon-save'){
-          const now=new Date();
-          const date=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
-          if(arr2[idx]) arr2[idx] = { ...arr2[idx], title: data.title, body: data.body, images: [], date };
-          map2[CURRENT.paraId]=arr2; setSermonMap(map2);
-          status('설교가 저장되었습니다.'); renderSermonList(); window.removeEventListener('message', onMsg);
-        }
-
-        if(data.type === 'sermon-delete'){
-          if(arr2[idx]) arr2.splice(idx,1);
-          map2[CURRENT.paraId]=arr2; setSermonMap(map2);
-          status('설교가 삭제되었습니다.'); renderSermonList(); window.removeEventListener('message', onMsg);
-        }
-      };
-      window.addEventListener('message', onMsg);
+  if (data.type === 'sermon-save') {
+    const now  = new Date();
+    const date = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+    if (arr2[idx]) {
+      arr2[idx] = { ...arr2[idx], title: data.title, body: data.body, images: [], date };
     }
+    map2[CURRENT.paraId] = arr2;
+    setSermonMap(map2);
+    status('설교가 저장되었습니다.');
+    renderSermonList();
+    window.removeEventListener('message', onMsg);
+  }
 
-    // 모달 RTE 버튼(있으면)
-    document.getElementById('rteBold')?.addEventListener('click', ()=> execFmt('bold'));
-    document.getElementById('rteItalic')?.addEventListener('click', ()=> execFmt('italic'));
-    document.getElementById('rteUnderline')?.addEventListener('click', ()=> execFmt('underline'));
-    document.getElementById('rteApplyColor')?.addEventListener('click', ()=>{
-      const hex = (document.getElementById('rteColor')?.value) || '#ffffff';
-      applyColorImmediateToRTE(hex);
-    });
+  if (data.type === 'sermon-delete') {
+    if (arr2[idx]) arr2.splice(idx, 1);
+    map2[CURRENT.paraId] = arr2;
+    setSermonMap(map2);
+    status('설교가 삭제되었습니다.');
+    renderSermonList();
+    window.removeEventListener('message', onMsg);
+  }
+};
+window.addEventListener('message', onMsg);
 
-    // Alt 단축키 (모달 RTE 전용)
-    window.addEventListener('keydown', (e)=>{
-      if (modalWrap.getAttribute('aria-hidden') === 'true') return;
-      if (sermonEditor.style.display === 'none') return;
-      if (!e.altKey || e.ctrlKey || e.metaKey) return;
+// ── (옵션) 모달 RTE 버튼 ───────────────────────────────────────────────────────
+document.getElementById('rteBold')?.addEventListener('click', () => execFmt('bold'));
+document.getElementById('rteItalic')?.addEventListener('click', () => execFmt('italic'));
+document.getElementById('rteUnderline')?.addEventListener('click', () => execFmt('underline'));
+document.getElementById('rteApplyColor')?.addEventListener('click', () => {
+  const hex = (document.getElementById('rteColor')?.value) || '#ffffff';
+  applyColorImmediateToRTE(hex);
+});
 
-      const active = document.activeElement;
-      const inEditor = active === sermonBody || sermonBody.contains(active);
-      if (!inEditor) return;
+// ── Alt 단축키 (모달 RTE 전용) ────────────────────────────────────────────────
+window.addEventListener('keydown', (e) => {
+  if (modalWrap.getAttribute('aria-hidden') === 'true') return;
+  if (sermonEditor.style.display === 'none') return;
+  if (!e.altKey || e.ctrlKey || e.metaKey) return;
 
-      const k = (e.key||'').toLowerCase();
-      if (!['b','i','u','c'].includes(k)) return;
+  const active   = document.activeElement;
+  const inEditor = active === sermonBody || sermonBody.contains(active);
+  if (!inEditor) return;
 
-      e.preventDefault(); e.stopPropagation();
+  const k = (e.key || '').toLowerCase();
+  if (!['b','i','u','c'].includes(k)) return;
 
-      if (k === 'b') execFmt('bold');
-      else if (k === 'i') execFmt('italic');
-      else if (k === 'u') execFmt('underline');
-      else if (k === 'c') {
-        const hex = (document.getElementById('rteColor')?.value) || '#ffffff';
-        applyColorImmediateToRTE(hex);
-      }
-    }, true);
+  e.preventDefault();
+  e.stopPropagation();
 
-    // 붙여넣기 시 굵은 글자 색 강조
-    document.addEventListener('paste', (e) => {
-      const editor = document.activeElement;
-      if (!editor || !editor.isContentEditable) return;
+  if (k === 'b') execFmt('bold');
+  else if (k === 'i') execFmt('italic');
+  else if (k === 'u') execFmt('underline');
+  else if (k === 'c') {
+    const hex = (document.getElementById('rteColor')?.value) || '#ffffff';
+    applyColorImmediateToRTE(hex);
+  }
+}, true);
 
-      e.preventDefault();
+// ── 붙여넣기 시 <b>/<strong>에 노란색 강조 적용 ───────────────────────────────
+document.addEventListener('paste', (e) => {
+  const editor = document.activeElement;
+  if (!editor || !editor.isContentEditable) return;
 
-      const pasteHTML =
-        (e.clipboardData || window.clipboardData).getData('text/html') ||
-        (e.clipboardData || window.clipboardData).getData('text/plain');
+  e.preventDefault();
 
-      if (!pasteHTML) return;
+  const clip   = (e.clipboardData || window.clipboardData);
+  const html   = clip.getData('text/html');
+  const text   = clip.getData('text/plain');
+  const raw    = html || text;
+  if (!raw) return;
 
-      const styledHTML = pasteHTML
-        .replace(/<b(.*?)>/gi, `<b style="color:#ffd86b;font-weight:700;"$1>`)
-        .replace(/<strong(.*?)>/gi, `<strong style="color:#ffd86b;font-weight:700;"$1>`);
+  // NOTE: 아래 정규식에서 <b>, <strong>가 HTML 태그 그대로 들어가야 합니다.
+  const styledHTML = String(raw)
+    .replace(/<b(.*?)>/gi, `<b style="color:#ffd86b;font-weight:700;"$1>`)
+    .replace(/<strong(.*?)>/gi, `<strong style="color:#ffd86b;font-weight:700;"$1>`);
 
-      if (document.queryCommandSupported('insertHTML')) {
-        document.execCommand('insertHTML', false, styledHTML);
-      } else {
-        editor.innerHTML += styledHTML;
-      }
-    });
+  if (document.queryCommandSupported('insertHTML')) {
+    document.execCommand('insertHTML', false, styledHTML);
+  } else {
+    // 구형 브라우저 폴백(커서 위치 유지 안 됨)
+    editor.innerHTML += styledHTML;
+  }
+});
 
-    /* ==== 본문 상단 패딩 자동 보정(툴바 없으면 0) ==== */
-    function adjustModalEditorPadding() {
-      const wrap = document.getElementById('modalControlsWrap'); // 현재는 없음
-      const body = document.querySelector('#sermonEditor .rte');
-      if (!body) return;
-      const h = wrap ? (wrap.offsetHeight||0) : 0;
-      body.style.setProperty('--editor-pad-top', (h + 0) + 'px');
-    }
-    window.addEventListener('resize', adjustModalEditorPadding);
-    document.getElementById('sermonTitle')?.addEventListener('input', adjustModalEditorPadding);
-    window.addEventListener('load', adjustModalEditorPadding);
+// ── 본문 상단 패딩 자동 보정(툴바 없으면 0) ────────────────────────────────────
+function adjustModalEditorPadding() {
+  const wrap = document.getElementById('modalControlsWrap'); // 현재는 없음
+  const body = document.querySelector('#sermonEditor .rte');
+  if (!body) return;
+  const h = wrap ? (wrap.offsetHeight || 0) : 0;
+  body.style.setProperty('--editor-pad-top', (h + 0) + 'px');
+}
+window.addEventListener('resize', adjustModalEditorPadding);
+document.getElementById('sermonTitle')?.addEventListener('input', adjustModalEditorPadding);
+window.addEventListener('load', adjustModalEditorPadding);
+</script>
 
   </script>
 </body>
