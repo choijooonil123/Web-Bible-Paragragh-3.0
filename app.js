@@ -825,7 +825,7 @@ window.addEventListener('keydown', (e)=>{
   }
 });
 
-/* === 팝업 편집기(최신, 파일선택 제거 + 플로팅 성경구절 + 자유 스크롤) === */
+/* === 팝업 편집기 (스크립트 분리 버전) === */
 function openSermonEditorWindow(idx){
   const map = getSermonMap();
   const arr = map[CURRENT.paraId] || [];
@@ -848,8 +848,6 @@ function openSermonEditorWindow(idx){
   const w = window.open('', '_blank', 'width=1100,height=820');
   if(!w){ alert('팝업이 차단되었습니다. 브라우저 팝업을 허용해주세요.'); return; }
   w.__WBPS_META__ = meta;
-
-  // (동일 출처면) Firebase 공유
   if (w.opener && w.opener.firebase) { w.firebase = w.opener.firebase; }
 
   let popupHTML = String.raw`<!DOCTYPE html><html lang="ko">
@@ -878,9 +876,8 @@ button:hover{border-color:color-mix(in hsl,var(--border) 75%,var(--accent) 25%)}
 .primary{background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 78%,white 10%),color-mix(in srgb,var(--accent) 72%,black 22%));border-color:color-mix(in srgb,var(--accent) 70%,black 10%)}
 .muted{color:var(--muted)}
 
-.context-editor{font-family:"Noto Serif KR","Nanum Myeongjo",serif;font-size:1.05rem;line-height:1.85;letter-spacing:.02em;word-break:keep-all}
+.context-editor{font-family:"Noto Serif KR","Nanum Myeong고",serif;font-size:1.05rem;line-height:1.85;letter-spacing:.02em;word-break:keep-all}
 
-/* === Notion-style Sermon Editor (blocks) === */
 .notion-header{display:flex;align-items:center;gap:8px;margin-top:8px}
 .notion-header .title{flex:1 1 auto;background:#161922;color:#e6e8ef;border:1px solid #2a3040;border-radius:8px;padding:10px 12px;font-weight:700}
 .notion-header .meta{display:flex;gap:8px;align-items:center}
@@ -913,7 +910,6 @@ button:hover{border-color:color-mix(in hsl,var(--border) 75%,var(--accent) 25%)}
 .notion-footer{padding:6px 12px;border-top:1px solid #252a36;background:#161922;position:sticky;bottom:0}
 #traceLog{font:12px/1.4 ui-monospace,Menlo,Consolas,monospace;max-height:180px;overflow:auto;white-space:pre-wrap}
 
-/* === Floating Bar === */
 #floatingBar{
   position: fixed; right: 16px; bottom: 16px; z-index: 50;
   display:flex; gap:8px; align-items:center;
@@ -923,14 +919,12 @@ button:hover{border-color:color-mix(in hsl,var(--border) 75%,var(--accent) 25%)}
 }
 #floatingBar button{ padding:8px 14px; border-radius:999px }
 
-/* 인쇄 최적화 */
 @media print {
   @page { size: A4; margin: 18mm; }
   body{ background:#fff; color:#000; grid-template-rows:0 1fr 0 }
   header, footer, #floatingBar { display:none !important; }
 }
 
-/* === Override: 자유 스크롤 모드 === */
 html, body { height:auto !important; overflow:auto !important; }
 main { height:auto !important; overflow:visible !important; }
 </style>
@@ -943,10 +937,7 @@ main { height:auto !important; overflow:visible !important; }
 </header>
 
 <main>
-  <!-- 상단 입력(간단) -->
   <input id="t" class="title-input" type="text" autocomplete="off" placeholder="설교 제목을 입력하세요">
-
-  <!-- === Notion-style Sermon Editor UI === -->
   <div class="notion-header">
     <input id="neTitle" class="title" placeholder="제목을 입력하세요" />
     <div class="meta">
@@ -955,24 +946,19 @@ main { height:auto !important; overflow:visible !important; }
     </div>
   </div>
 
-  <!-- 선택 툴바 -->
   <div id="neBubble" class="bubble hidden">
     <button data-mark="bold"><b>B</b></button>
     <button data-mark="italic"><i>I</i></button>
     <button data-mark="underline"><u>U</u></button>
     <button data-mark="strike"><s>S</s></button>
-    <button data-mark="code">\`code\`</button>
+    <button data-mark="code">` + '\\`code\\`' + `</button>
     <button data-mark="highlight">HL</button>
     <button data-action="link">🔗</button>
   </div>
 
-  <!-- / 슬래시 메뉴 -->
   <div id="neSlash" class="slash hidden"></div>
-
-  <!-- 블록 에디터 루트 -->
   <div id="editorRoot" aria-label="Sermon Editor"></div>
 
-  <!-- STT 로그 / 자동저장 상태 -->
   <div class="notion-footer">
     <div class="notion-badge" id="neAutosave">자동저장 대기중…</div>
     <details style="margin-top:6px">
@@ -982,7 +968,6 @@ main { height:auto !important; overflow:visible !important; }
   </div>
 </main>
 
-<!-- 플로팅 도구 막대 -->
 <div id="floatingBar" aria-label="도구 막대">
   <button id="btnInsertBibleFloating" class="primary">성경구절</button>
 </div>
@@ -995,10 +980,57 @@ main { height:auto !important; overflow:visible !important; }
   <button class="danger" id="d">삭제</button>
   <button class="primary" id="s">저장</button>
 </footer>
+</body>
+</html>`;
 
-<script>
-(function(){
-  const w = window, d = document;
+  // 템플릿 보간 및 </script> 보호
+  popupHTML = popupHTML.replaceAll('${', '\\${');
+  popupHTML = popupHTML.replaceAll('</script>', '<\\/script>');
+
+  w.document.open();
+  w.document.write(popupHTML);
+  w.document.close();
+
+  // 팝업 초기화 실행 (아래 함수)
+  initSermonPopup(w);
+
+  // 부모창 메시지 핸들러 (저장/삭제 반영)
+  const onMsg = (ev) => {
+    const data = ev?.data || {};
+    if (!data.type) return;
+
+    const map2 = getSermonMap();
+    const arr2 = map2[CURRENT.paraId] || [];
+
+    if (data.type === 'sermon-save') {
+      const now  = new Date();
+      const date = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+      if (arr2[idx]) {
+        arr2[idx] = { ...arr2[idx], title: data.title, body: data.body, images: [], date };
+      }
+      map2[CURRENT.paraId] = arr2;
+      setSermonMap(map2);
+      status('설교가 저장되었습니다.');
+      renderSermonList();
+      window.removeEventListener('message', onMsg);
+    }
+
+    if (data.type === 'sermon-delete') {
+      if (arr2[idx]) arr2.splice(idx, 1);
+      map2[CURRENT.paraId] = arr2;
+      setSermonMap(map2);
+      status('설교가 삭제되었습니다.');
+      renderSermonList();
+      window.removeEventListener('message', onMsg);
+    }
+  };
+  window.addEventListener('message', onMsg);
+}
+
+/* ===== 팝업 내부 스크립트(문자열 밖, 실제 함수) ===== */
+function initSermonPopup(win){
+  const w = win, d = w.document;
+
   const $ = id => d.getElementById(id);
   const meta = w.__WBPS_META__ || {};
 
@@ -1008,18 +1040,13 @@ main { height:auto !important; overflow:visible !important; }
   $('t').value = meta.title || '';
   $('neTitle').value = meta.title || '';
 
-  const N$ = sel => d.querySelector(sel);
   const N$$= sel => Array.from(d.querySelectorAll(sel));
   const Nuid= () => Math.random().toString(36).slice(2,10);
 
-  const neTitle   = $('neTitle');
   const neRoot    = $('editorRoot');
   const neBubble  = $('neBubble');
   const neSlash   = $('neSlash');
   const neAutosave= $('neAutosave');
-  const neSttBtn  = $('neStt');
-  const nePubBtn  = $('nePublish');
-  const neTrace   = $('traceLog');
 
   const NSTATE = { blocks: [], history: [], cursor: -1, docId: null };
 
@@ -1159,7 +1186,7 @@ main { height:auto !important; overflow:visible !important; }
     const i = +item.dataset.i; NapplySlash(N_SLASH[i]);
     neSlash.classList.add('hidden');
   });
-  document.addEventListener('keydown', e=>{ if(e.key==='Escape') neSlash.classList.add('hidden'); });
+  d.addEventListener('keydown', e=>{ if(e.key==='Escape') neSlash.classList.add('hidden'); });
 
   function NapplySlash(it){
     if(!NslashTarget) return;
@@ -1204,7 +1231,7 @@ main { height:auto !important; overflow:visible !important; }
     NsaveTimer = setTimeout(()=>{
       try{
         const key = `wbps.sermon.draft.blocks.${(meta.paraId||'')}.${(meta.idx||0)}`;
-        const payload = { title: neTitle.value||'', blocks:NSTATE.blocks, ts: Date.now() };
+        const payload = { title: ($('neTitle').value||''), blocks:NSTATE.blocks, ts: Date.now() };
         w.localStorage.setItem(key, JSON.stringify(payload));
         neAutosave.textContent = '자동저장됨';
       }catch(_){ neAutosave.textContent = '자동저장 실패(용량)'; }
@@ -1214,23 +1241,23 @@ main { height:auto !important; overflow:visible !important; }
   (function Ninit(){
     initBlocksFromHTML(meta.body||'');
     Nrender(); NpushHistory();
-    setTimeout(()=>{ const last = document.querySelector('#editorRoot .editor-block:last-child .content'); last && last.focus(); }, 60);
+    setTimeout(()=>{ const last = d.querySelector('#editorRoot .editor-block:last-child .content'); last && last.focus(); }, 60);
   })();
 
-  /* STT Tracer */
+  // STT
   (function(){
-    if(!('webkitSpeechRecognition' in w) && !('SpeechRecognition' in w)){ console.warn('STT 미지원'); return; }
     const SR = w.SpeechRecognition || w.webkitSpeechRecognition;
+    if(!SR){ console.warn('STT 미지원'); return; }
     const rec = new SR(); rec.lang='ko-KR'; rec.interimResults=true; rec.continuous=true;
 
     let activeBlock=null, accText='', startedAt=null;
-    function getActive(){ const sel=w.getSelection(); const n=sel?.anchorNode; const el=(n?.nodeType===1?n:(n?.parentElement)); return el?.closest?.('.editor-block') || document.querySelector('.editor-block'); }
+    function getActive(){ const sel=w.getSelection(); const n=sel?.anchorNode; const el=(n?.nodeType===1?n:(n?.parentElement)); return el?.closest?.('.editor-block') || d.querySelector('.editor-block'); }
     function setProgress(block, ratio){ const bar=block?.querySelector('.progress'); if(bar) bar.style.width = Math.max(0,Math.min(100,ratio*100)) + '%'; }
-    function plain(html){ const t=document.createElement('div'); t.innerHTML=html||''; return t.textContent||''; }
+    function plain(html){ const t=d.createElement('div'); t.innerHTML=html||''; return t.textContent||''; }
     function sim(a,b){ a=a.replace(/\s+/g,''); b=b.replace(/\s+/g,''); const L=Math.max(a.length,1); let m=0; for(let i=0;i<Math.min(a.length,b.length);i++){ if(a[i]===b[i]) m++; } return m/L; }
     function nextBlock(block){ const nx = block?.nextElementSibling?.classList.contains('editor-block')? block.nextElementSibling : null; return nx; }
 
-    const neSttBtn = document.getElementById('neStt');
+    const neSttBtn = d.getElementById('neStt');
     neSttBtn?.addEventListener('click', ()=>{
       if(neSttBtn.dataset.on==='1'){ rec.stop(); neSttBtn.dataset.on='0'; neSttBtn.textContent='🎙 STT'; return; }
       activeBlock = getActive(); if(!activeBlock){ w.alert('블록을 선택하세요'); return; }
@@ -1245,7 +1272,7 @@ main { height:auto !important; overflow:visible !important; }
       const s = sim(base, accText); setProgress(activeBlock, s);
 
       const t = ((Date.now()-startedAt)/1000).toFixed(1);
-      const neTrace = document.getElementById('traceLog');
+      const neTrace = d.getElementById('traceLog');
       neTrace.textContent += `t=${t}s s=${(s*100).toFixed(0)}% : ${txt}\n`;
       neTrace.scrollTop = neTrace.scrollHeight;
 
@@ -1258,8 +1285,8 @@ main { height:auto !important; overflow:visible !important; }
     rec.onerror = (e)=> console.warn('STT 오류', e.error);
   })();
 
-  /* 게시(Firebase 있으면) */
-  const nePubBtn = document.getElementById('nePublish');
+  // 게시(Firebase 옵션)
+  const nePubBtn = d.getElementById('nePublish');
   nePubBtn?.addEventListener('click', async ()=>{
     try{
       if(typeof w.firebase === 'undefined'){ w.alert('Firebase 미탑재: 게시 기능을 사용하려면 SDK/초기화가 필요합니다.'); return; }
@@ -1269,7 +1296,7 @@ main { height:auto !important; overflow:visible !important; }
       const db = w.firebase.firestore();
       const docRef = NSTATE.docId ? db.collection('sermons').doc(NSTATE.docId) : db.collection('sermons').doc();
       const payload = {
-        title: (document.getElementById('neTitle').value||'무제'),
+        title: (d.getElementById('neTitle').value||'무제'),
         blocks: NSTATE.blocks,
         owner: user.uid,
         updatedAt: w.firebase.firestore.FieldValue.serverTimestamp(),
@@ -1283,8 +1310,8 @@ main { height:auto !important; overflow:visible !important; }
     }catch(err){ console.error(err); w.alert('게시 실패: '+err.message); }
   });
 
-  /* 성경구절 삽입(플로팅 버튼) */
-  document.getElementById('btnInsertBibleFloating')?.addEventListener('click', insertBiblePrompt);
+  // 성경구절 삽입
+  d.getElementById('btnInsertBibleFloating')?.addEventListener('click', insertBiblePrompt);
   async function insertBiblePrompt(){
     const raw = w.prompt('삽입할 성경구절 (예: 요 3:16, 창세기 1:1-3)');
     if(!raw) return;
@@ -1310,25 +1337,25 @@ main { height:auto !important; overflow:visible !important; }
     const html   = verses.map(([v,t])=>`<div class="verse-line"><sup>${v}</sup>${t}</div>`).join('');
     NSTATE.blocks.push({ id:Nuid(), type:'p', html: header+html });
     Nrender(); NpushHistory(); NscheduleAutosave();
-    const last = document.querySelector('#editorRoot .editor-block:last-child .content');
+    const last = d.querySelector('#editorRoot .editor-block:last-child .content');
     last && last.focus();
   }
 
-  /* 저장/삭제/닫기/인쇄/낭독 */
-  document.getElementById('s').onclick = ()=>{
+  // 저장/삭제/닫기/인쇄/낭독
+  d.getElementById('s').onclick = ()=>{
     const html = NblocksToHTML();
-    const title = (document.getElementById('neTitle').value || document.getElementById('t').value || '').trim() || '(제목 없음)';
-    const images = []; // 파일 기능 제거
+    const title = (d.getElementById('neTitle').value || d.getElementById('t').value || '').trim() || '(제목 없음)';
+    const images = [];
     w.opener?.postMessage?.({ type:'sermon-save', title, body: html, images }, '*');
     w.close();
   };
-  document.getElementById('d').onclick = ()=>{ if(w.confirm('삭제할까요?')){ w.opener?.postMessage?.({ type:'sermon-delete' }, '*'); w.close(); } };
-  document.getElementById('x').onclick = ()=> w.close();
-  document.getElementById('print').onclick = ()=> w.print();
+  d.getElementById('d').onclick = ()=>{ if(w.confirm('삭제할까요?')){ w.opener?.postMessage?.({ type:'sermon-delete' }, '*'); w.close(); } };
+  d.getElementById('x').onclick = ()=> w.close();
+  d.getElementById('print').onclick = ()=> w.print();
 
-  document.getElementById('read').onclick = ()=>{
+  d.getElementById('read').onclick = ()=>{
     const plain = toPlainText(NblocksToHTML());
-    const text = [ (document.getElementById('neTitle').value||document.getElementById('t').value||'').trim(), plain.trim() ].filter(Boolean).join('. ');
+    const text = [ (d.getElementById('neTitle').value||d.getElementById('t').value||'').trim(), plain.trim() ].filter(Boolean).join('. ');
     if(!text){ w.alert('낭독할 내용이 없습니다.'); return; }
     const synth = w.speechSynthesis || window.speechSynthesis;
     try{ synth.cancel(); }catch(_){}
@@ -1336,15 +1363,15 @@ main { height:auto !important; overflow:visible !important; }
     u.lang='ko-KR';
     synth.speak(u);
   };
-  document.getElementById('stop').onclick = ()=>{ try{ (w.speechSynthesis||window.speechSynthesis)?.cancel(); }catch(_){} };
+  d.getElementById('stop').onclick = ()=>{ try{ (w.speechSynthesis||window.speechSynthesis)?.cancel(); }catch(_){} };
 
   function toPlainText(html){
-    const tmp=document.createElement('div'); tmp.innerHTML=html||'';
+    const tmp=d.createElement('div'); tmp.innerHTML=html||'';
     tmp.querySelectorAll('sup').forEach(s=> s.textContent='['+s.textContent+'] ');
     return (tmp.textContent||'').replace(/\s+\n/g,'\n').replace(/\n{2,}/g,'\n');
   }
 
-  /* 성경 데이터 로드 유틸 */
+  // 성경 데이터 로드 유틸
   let __BOOKS_CACHE = null;
   async function getBooksInPopup(){
     if (__BOOKS_CACHE) return __BOOKS_CACHE;
@@ -1406,115 +1433,9 @@ main { height:auto !important; overflow:visible !important; }
       '요3':'요한삼서','요일3':'요한삼서','요한삼':'요한삼서','요한삼서':'요한삼서','유':'유다서','유다서':'유다서','계':'요한계시록','계시록':'요한계시록','요한계시록':'요한계시록'
     };
   }
-})();
-</script>
-</body>
-</html>`;
-// 템플릿 리터럴 보호(기존)
-popupHTML = popupHTML.replaceAll('${', '\\${');
+}
 
-// 🔴 여기를 추가!
-popupHTML = popupHTML.replaceAll('</script>', '<\\/script>');
-// 또는: popupHTML = popupHTML.replaceAll('</script>', '</scr' + 'ipt>');
-
-// 그 다음에 write
-w.document.open();
-w.document.write(popupHTML);
-w.document.close();
-
-// 부모창 메시지 핸들러 (저장/삭제 반영)
-const onMsg = (ev) => {
-  const data = ev?.data || {};
-  if (!data.type) return;
-
-  const map2 = getSermonMap();
-  const arr2 = map2[CURRENT.paraId] || [];
-
-  if (data.type === 'sermon-save') {
-    const now  = new Date();
-    const date = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
-    if (arr2[idx]) {
-      arr2[idx] = { ...arr2[idx], title: data.title, body: data.body, images: [], date };
-    }
-    map2[CURRENT.paraId] = arr2;
-    setSermonMap(map2);
-    status('설교가 저장되었습니다.');
-    renderSermonList();
-    window.removeEventListener('message', onMsg);
-  }
-
-  if (data.type === 'sermon-delete') {
-    if (arr2[idx]) arr2.splice(idx, 1);
-    map2[CURRENT.paraId] = arr2;
-    setSermonMap(map2);
-    status('설교가 삭제되었습니다.');
-    renderSermonList();
-    window.removeEventListener('message', onMsg);
-  }
-};
-window.addEventListener('message', onMsg);
-
-// ── (옵션) 모달 RTE 버튼 ───────────────────────────────────────────────────────
-document.getElementById('rteBold')?.addEventListener('click', () => execFmt('bold'));
-document.getElementById('rteItalic')?.addEventListener('click', () => execFmt('italic'));
-document.getElementById('rteUnderline')?.addEventListener('click', () => execFmt('underline'));
-document.getElementById('rteApplyColor')?.addEventListener('click', () => {
-  const hex = (document.getElementById('rteColor')?.value) || '#ffffff';
-  applyColorImmediateToRTE(hex);
-});
-
-// ── Alt 단축키 (모달 RTE 전용) ────────────────────────────────────────────────
-window.addEventListener('keydown', (e) => {
-  if (modalWrap.getAttribute('aria-hidden') === 'true') return;
-  if (sermonEditor.style.display === 'none') return;
-  if (!e.altKey || e.ctrlKey || e.metaKey) return;
-
-  const active   = document.activeElement;
-  const inEditor = active === sermonBody || sermonBody.contains(active);
-  if (!inEditor) return;
-
-  const k = (e.key || '').toLowerCase();
-  if (!['b','i','u','c'].includes(k)) return;
-
-  e.preventDefault();
-  e.stopPropagation();
-
-  if (k === 'b') execFmt('bold');
-  else if (k === 'i') execFmt('italic');
-  else if (k === 'u') execFmt('underline');
-  else if (k === 'c') {
-    const hex = (document.getElementById('rteColor')?.value) || '#ffffff';
-    applyColorImmediateToRTE(hex);
-  }
-}, true);
-
-// ── 붙여넣기 시 <b>/<strong>에 노란색 강조 적용 ───────────────────────────────
-document.addEventListener('paste', (e) => {
-  const editor = document.activeElement;
-  if (!editor || !editor.isContentEditable) return;
-
-  e.preventDefault();
-
-  const clip   = (e.clipboardData || window.clipboardData);
-  const html   = clip.getData('text/html');
-  const text   = clip.getData('text/plain');
-  const raw    = html || text;
-  if (!raw) return;
-
-  // NOTE: 아래 정규식에서 <b>, <strong>가 HTML 태그 그대로 들어가야 합니다.
-  const styledHTML = String(raw)
-    .replace(/<b(.*?)>/gi, `<b style="color:#ffd86b;font-weight:700;"$1>`)
-    .replace(/<strong(.*?)>/gi, `<strong style="color:#ffd86b;font-weight:700;"$1>`);
-
-  if (document.queryCommandSupported('insertHTML')) {
-    document.execCommand('insertHTML', false, styledHTML);
-  } else {
-    // 구형 브라우저 폴백(커서 위치 유지 안 됨)
-    editor.innerHTML += styledHTML;
-  }
-});
-
-// ── 본문 상단 패딩 자동 보정(툴바 없으면 0) ────────────────────────────────────
+/* ===== 모달 RTE 상단 패딩 자동 보정 ===== */
 function adjustModalEditorPadding() {
   const wrap = document.getElementById('modalControlsWrap'); // 현재는 없음
   const body = document.querySelector('#sermonEditor .rte');
@@ -1526,8 +1447,5 @@ window.addEventListener('resize', adjustModalEditorPadding);
 document.getElementById('sermonTitle')?.addEventListener('input', adjustModalEditorPadding);
 window.addEventListener('load', adjustModalEditorPadding);
 
-
-/* ====== 인라인 제목 편집 보조 (원본 코드에 존재한다면 별도 구현 필요) ======
-   주어진 스니펫에는 startInlineTitleEdit 정의가 보이지 않습니다.
-   만약 다른 파일에 있다면 그대로 사용되고, 없으면 아래 더미를 유지하세요. */
-function startInlineTitleEdit(){ /* no-op (원본 정의가 있다면 이 부분 제거) */ }
+/* ===== 인라인 제목 편집 더미(정의가 없을 때만 사용) ===== */
+function startInlineTitleEdit(){ /* no-op: 필요 시 실제 구현으로 교체 */ }
