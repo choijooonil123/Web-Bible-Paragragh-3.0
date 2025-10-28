@@ -1089,7 +1089,7 @@
       // (동일 출처면) Firebase 공유
       if (w.opener && w.opener.firebase) { w.firebase = w.opener.firebase; }
 
-      const popupHTML = String.raw`<!DOCTYPE html><html lang="ko">
+      let popupHTML = String.raw`<!DOCTYPE html><html lang="ko">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>설교 편집</title>
@@ -1233,6 +1233,7 @@ main { height:auto !important; overflow:visible !important; }
   <button class="primary" id="s">저장</button>
 </footer>
 
+<script>
 (function(){
   const w = window, d = document;
   const $ = id => d.getElementById(id);
@@ -1640,15 +1641,11 @@ main { height:auto !important; overflow:visible !important; }
     };
   }
 })();
+</script>
 </body>
 </html>`;
-
-// 1️⃣ popupHTML 문자열 정의 끝부분 바로 닫기
-const popupHTML = `<!DOCTYPE html>
-<html lang="ko">
-  ...
-</body>
-</html>`;  // ← 백틱 닫기 ★ 여기까지만 문자열
+// 🔹 2️⃣ 바로 아래 한 줄 추가
+popupHTML = popupHTML.replaceAll('${', '\\${');
 
 // 2️⃣ 실제 JS 코드 실행 (문자열과 분리되어야 함)
 w.document.open();
