@@ -1410,10 +1410,14 @@ main { height:auto !important; overflow:visible !important; }
 </script>
 </body>
 </html>`;
-// 🔹 2️⃣ 바로 아래 한 줄 추가
+// 템플릿 리터럴 보호(기존)
 popupHTML = popupHTML.replaceAll('${', '\\${');
 
-// 2️⃣ 실제 JS 코드 실행 (문자열과 분리되어야 함)
+// 🔴 여기를 추가!
+popupHTML = popupHTML.replaceAll('</script>', '<\\/script>');
+// 또는: popupHTML = popupHTML.replaceAll('</script>', '</scr' + 'ipt>');
+
+// 그 다음에 write
 w.document.open();
 w.document.write(popupHTML);
 w.document.close();
