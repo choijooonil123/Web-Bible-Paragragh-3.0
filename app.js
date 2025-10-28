@@ -592,7 +592,6 @@ function openSingleDocEditor(kind){
 
   const map = getDocMap(key);
   const doc = map[pid] || {
-    title: `${titlePrefix} — ${para.title||para.ref}`,
     body:  (kind==='summary' ? '핵심 내용을 간결하게 요약해 적어주세요.' : ''),
     images: [], date:''
   };
