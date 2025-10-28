@@ -618,7 +618,6 @@ function openSingleDocEditor(kind){
       aiBtn.onclick = async ()=>{ /* 선택: AI 핸들러 */ };
     }
   }
-  adjustModalEditorPadding();
 }
 
 function renderSermonList(){
