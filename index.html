@@ -136,7 +136,15 @@
       height: calc(94vh - 56px); min-height: calc(94vh - 56px); max-height: calc(94vh - 56px);
       overflow: hidden;
     }
-    #sermonEditor .rte{ flex:1 1 auto; min-height:0; overflow:auto; }
+    /* sermonBody 전체를 위로 꽉 채우기 */
+    #sermonEditor .rte {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
+      padding-top: 0 !important;  /* 🔹 상단 여백 제거 */
+      margin-top: 0 !important;   /* 🔹 외부 여백 제거 */
+    }
+
 
     /* 모달 RTE 툴바 고정 */
     #rteToolbar{
