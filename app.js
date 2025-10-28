@@ -303,10 +303,10 @@ function buildTree(){
           <div class="ptoolbar">
             <button class="primary speakBtn">낭독</button>
             <label class="chip"><input type="checkbox" class="keepReading" style="margin-right:6px">계속 낭독</label>
+            <button class="ctxBtn btnSummary">내용흐름</button>
             <button class="ctxBtn btnUnitCtx">단위성경속 맥락</button>
             <button class="ctxBtn btnWholeCtx">전체성경속 맥락</button>
             <button class="ctxBtn btnCommentary">주석</button>
-            <button class="ctxBtn btnSummary">내용요약</button>
             <div class="spacer"></div>
             <button class="sermBtn">설교</button>
           </div>
