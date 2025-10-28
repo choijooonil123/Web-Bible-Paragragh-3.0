@@ -603,6 +603,7 @@ function openSingleDocEditor(kind){
   modalWrap.setAttribute('aria-hidden','false');
   modalFooterNew.style.display = 'none';
 
+  sermonTitle.value = doc.title || '';
   // sermonTitle.value = doc.title || '';
   setBodyHTML(doc.body || '');
 
