@@ -592,12 +592,11 @@ function openSingleDocEditor(kind){
 
   const map = getDocMap(key);
   const doc = map[pid] || {
-    // 🔹 prefix(단위성경속/전체성경속/주석/내용요약) 제거
-    title: `${para.title || para.ref}`,
+    title: `${titlePrefix} — ${para.title||para.ref}`,
     body:  (kind==='summary' ? '핵심 내용을 간결하게 요약해 적어주세요.' : ''),
     images: [], date:''
   };
-  modalRef.textContent = `${CURRENT.book} ${CURRENT.chap}장 · ${para.title || para.ref} (${para.ref})`;
+  modalRef.textContent = `${CURRENT.book} ${CURRENT.chap}장 · ${para.title||para.ref} (${para.ref}) — ${titlePrefix}`;
   sermonList.innerHTML = '';
   sermonEditor.style.display = '';
   sermonEditor.classList.add('context-editor');
