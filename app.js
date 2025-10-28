@@ -1525,7 +1525,7 @@ function adjustModalEditorPadding() {
 window.addEventListener('resize', adjustModalEditorPadding);
 document.getElementById('sermonTitle')?.addEventListener('input', adjustModalEditorPadding);
 window.addEventListener('load', adjustModalEditorPadding);
-}
+
 
 /* ====== 인라인 제목 편집 보조 (원본 코드에 존재한다면 별도 구현 필요) ======
    주어진 스니펫에는 startInlineTitleEdit 정의가 보이지 않습니다.
