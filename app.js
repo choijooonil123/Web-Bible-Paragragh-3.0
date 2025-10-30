@@ -1333,9 +1333,7 @@ function initSermonPopup(win){
     if(!verses.length){ w.alert('해당 구절을 찾을 수 없습니다.'); return; }
 
     // ✅ 수정된 부분 시작
-    const header = `<div class="verse-header" style="font-style:italic;color:#ff8080;">
-      <b>${bookKey} ${chap}:${vFrom}${vTo!==vFrom?'-'+vTo:''}</b>
-    </div>`;
+    const header = `<div class="verse-header">&lt;${bookKey} ${chap}:${vFrom}${vTo!==vFrom?'-'+vTo:''}&gt;</div>`;
     const html = verses
       .map(([v,t])=>`<div class="verse-line" style="font-style:italic;color:#ff8080;">
         <sup>${v}</sup>${t}
