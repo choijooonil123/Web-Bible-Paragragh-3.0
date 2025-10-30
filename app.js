@@ -627,24 +627,62 @@ function renderSermonList(){
   if(arr.length===0){ startNewSermon(); return; }
 
   arr.forEach((it, idx)=>{
-    const row = document.createElement('div'); row.className='item';
+    const row = document.createElement('div');
+    row.className = 'item';
+    row.style.display = 'flex';
+    row.style.alignItems = 'center';
+    row.style.gap = '8px';
+
     const dateHtml = it.date ? `<span class="date">${it.date}</span>` : '';
     row.innerHTML = `
-      <div class="item-title">
+      <div class="item-title" style="flex:1 1 auto; min-width:0;">
         ${escapeHtml(it.title||'(제목 없음)')} ${dateHtml}
       </div>
-      <div class="ptoolbar">
+
+      <!-- 🔗 링크 입력란 (편집 버튼 앞) -->
+      <label class="muted" style="white-space:nowrap;">링크</label>
+      <input type="text" class="sermonLinkInput" placeholder="https://..."
+             value="${it.link ? escapeHtml(it.link) : ''}"
+             style="width:240px;padding:4px 6px;border-radius:6px;border:1px solid var(--border);background:var(--panel);color:var(--text);" />
+      <button class="openLinkBtn">열기</button>
+
+      <div class="ptoolbar" style="display:flex;gap:6px;">
         <button data-edit="${idx}">편집</button>
         <button data-del="${idx}" style="border-color:var(--danger);color:var(--text)">삭제</button>
-      </div>`;
+      </div>
+    `;
+
+    // 편집/삭제 동작
     row.querySelector('[data-edit]').onclick = ()=>{
       modalWrap.style.display = 'none'; modalWrap.setAttribute('aria-hidden','true');
       openSermonEditorWindow(idx);
     };
     row.querySelector('[data-del]').onclick = ()=> deleteSermon(idx);
+
+    // 🔗 링크 입력 즉시 저장
+    const linkInput = row.querySelector('.sermonLinkInput');
+    linkInput.addEventListener('change', ()=>{
+      const val = linkInput.value.trim();
+      const map2 = getSermonMap();
+      const arr2 = map2[CURRENT.paraId] || [];
+      if(arr2[idx]){
+        arr2[idx].link = val;
+        setSermonMap(map2);
+      }
+    });
+
+    // ↗︎ 열기 버튼
+    row.querySelector('.openLinkBtn').addEventListener('click', ()=>{
+      const url = (linkInput.value || '').trim();
+      if(!url){ alert('링크가 없습니다.'); return; }
+      const safe = /^https?:\/\//i.test(url) ? url : ('https://' + url);
+      window.open(safe, '_blank');
+    });
+
     sermonList.appendChild(row);
   });
 }
+
 
 el('newSermonBtn').onclick = ()=>{
   sermonEditor.dataset.ctxType = '';
@@ -656,7 +694,7 @@ el('newSermonBtn').onclick = ()=>{
   const map = getSermonMap();
   const arr = map[CURRENT.paraId] || [];
   const newId = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()));
-  arr.unshift({ id: newId, title:'', body:'', images:[], date:'' });
+  arr.unshift({ id: newId, title:'', body:'', images:[], date:'', link:'' });
   map[CURRENT.paraId] = arr;
   setSermonMap(map);
 
@@ -691,17 +729,17 @@ el('cancelEdit')?.addEventListener('click', ()=>{
 });
 
 el('saveSermon').onclick = ()=>{
-  const title = sermonTitle.value.trim() || '(제목 없음)';
-  let body = getBodyHTML() || '';
-  body = body.replace(/^\s+|\s+$/g, '');
+    const title = sermonTitle.value.trim() || '(제목 없음)';
+    let body = getBodyHTML() || '';
+    body = body.replace(/^\s+|\s+$/g, '');
 
-  const imgs  = []; // 파일선택 제거에 따라 항상 빈 배열
-  const now   = new Date();
-  const date  = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+    const imgs  = []; // 파일선택 제거에 따라 항상 빈 배열
+    const now   = new Date();
+    const date  = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
 
-  const para  = BIBLE.books[CURRENT.book][CURRENT.chap].paras[CURRENT.paraIdx];
-  const pid   = `${CURRENT.book}|${CURRENT.chap}|${para.ref}`;
-  const ctxType = sermonEditor.dataset.ctxType || '';
+    const para  = BIBLE.books[CURRENT.book][CURRENT.chap].paras[CURRENT.paraIdx];
+    const pid   = `${CURRENT.book}|${CURRENT.chap}|${para.ref}`;
+    const ctxType = sermonEditor.dataset.ctxType || '';
 
   if(ctxType){
     const key = ctxType==='unit'       ? STORAGE_UNIT_CTX
@@ -719,13 +757,21 @@ el('saveSermon').onclick = ()=>{
     return;
   }
 
-  const map = getSermonMap();
-  const arr = map[CURRENT.paraId] || [];
-  const editing = sermonEditor.dataset.editing;
-  if(editing!==''){ const i=+editing; if(arr[i]) arr[i] = {...arr[i], title, body, images:imgs, date}; }
-  else { arr.unshift({ id: crypto.randomUUID(), title, body, images: imgs, date }); }
-  map[CURRENT.paraId] = arr; setSermonMap(map);
-  sermonEditor.style.display = 'none'; renderSermonList(); status('설교가 저장되었습니다.');
+    const map = getSermonMap();
+    const arr = map[CURRENT.paraId] || [];
+    const editing = sermonEditor.dataset.editing;
+    if(editing!==''){
+    const i = +editing;
+    if(arr[i]){
+        const keepLink = arr[i].link || '';
+        arr[i] = { ...arr[i], title, body, images: imgs, date, link: keepLink };
+    }
+    }else{
+    // 새로 추가 시에도 link 필드 포함
+    arr.unshift({ id: crypto.randomUUID(), title, body, images: imgs, date, link: '' });
+    }
+    map[CURRENT.paraId] = arr; setSermonMap(map);
+    sermonEditor.style.display = 'none'; renderSermonList(); status('설교가 저장되었습니다.');
 };
 
 /* ===== RTE 유틸 (모달 편집기용) ===== */
