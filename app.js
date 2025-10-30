@@ -639,12 +639,11 @@ function renderSermonList(){
         ${escapeHtml(it.title||'(제목 없음)')} ${dateHtml}
       </div>
 
-      <!-- 🔗 링크 입력란 (편집 버튼 앞) -->
+      <!-- 🔗 링크 입력란 (클릭 시 바로 열림) -->
       <label class="muted" style="white-space:nowrap;">링크</label>
       <input type="text" class="sermonLinkInput" placeholder="https://..."
              value="${it.link ? escapeHtml(it.link) : ''}"
-             style="width:240px;padding:4px 6px;border-radius:6px;border:1px solid var(--border);background:var(--panel);color:var(--text);" />
-      <button class="openLinkBtn">열기</button>
+             style="width:240px;padding:4px 6px;border-radius:6px;border:1px solid var(--border);background:var(--panel);color:var(--text);cursor:pointer;text-decoration:underline;" />
 
       <div class="ptoolbar" style="display:flex;gap:6px;">
         <button data-edit="${idx}">편집</button>
@@ -654,13 +653,16 @@ function renderSermonList(){
 
     // 편집/삭제 동작
     row.querySelector('[data-edit]').onclick = ()=>{
-      modalWrap.style.display = 'none'; modalWrap.setAttribute('aria-hidden','true');
+      modalWrap.style.display = 'none';
+      modalWrap.setAttribute('aria-hidden','true');
       openSermonEditorWindow(idx);
     };
     row.querySelector('[data-del]').onclick = ()=> deleteSermon(idx);
 
-    // 🔗 링크 입력 즉시 저장
+    // 🔗 링크 입력 즉시 저장 + 클릭시 바로 열기
     const linkInput = row.querySelector('.sermonLinkInput');
+
+    // 값 변경 시 저장
     linkInput.addEventListener('change', ()=>{
       const val = linkInput.value.trim();
       const map2 = getSermonMap();
@@ -671,10 +673,10 @@ function renderSermonList(){
       }
     });
 
-    // ↗︎ 열기 버튼
-    row.querySelector('.openLinkBtn').addEventListener('click', ()=>{
-      const url = (linkInput.value || '').trim();
-      if(!url){ alert('링크가 없습니다.'); return; }
+    // 클릭 시 새 탭 열기
+    linkInput.addEventListener('click', (e)=>{
+      const url = e.target.value.trim();
+      if(!url) return;
       const safe = /^https?:\/\//i.test(url) ? url : ('https://' + url);
       window.open(safe, '_blank');
     });
@@ -682,7 +684,6 @@ function renderSermonList(){
     sermonList.appendChild(row);
   });
 }
-
 
 el('newSermonBtn').onclick = ()=>{
   sermonEditor.dataset.ctxType = '';
