@@ -1332,8 +1332,17 @@ function initSermonPopup(win){
     const verses=(ch.paras||[]).flatMap(p=>p.verses||[]).filter(([v])=>v>=vFrom&&v<=vTo);
     if(!verses.length){ w.alert('해당 구절을 찾을 수 없습니다.'); return; }
 
-    const header = `<div class="verse-header"><b>${bookKey} ${chap}:${vFrom}${vTo!==vFrom?'-'+vTo:''}</b></div>`;
-    const html   = verses.map(([v,t])=>`<div class="verse-line"><sup>${v}</sup>${t}</div>`).join('');
+    // ✅ 수정된 부분 시작
+    const header = `<div class="verse-header" style="font-style:italic;color:#ff8080;">
+      <b>${bookKey} ${chap}:${vFrom}${vTo!==vFrom?'-'+vTo:''}</b>
+    </div>`;
+    const html = verses
+      .map(([v,t])=>`<div class="verse-line" style="font-style:italic;color:#ff8080;">
+        <sup>${v}</sup>${t}
+      </div>`)
+      .join('');
+    // ✅ 수정된 부분 끝
+    
     NSTATE.blocks.push({ id:Nuid(), type:'p', html: header+html });
     Nrender(); NpushHistory(); NscheduleAutosave();
     const last = d.querySelector('#editorRoot .editor-block:last-child .content');
