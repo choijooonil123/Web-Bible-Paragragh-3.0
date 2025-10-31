@@ -308,44 +308,25 @@ function buildTree(){
           </div>
           <div class="pcontent"></div>`;
 
-          // [PATCH 1 START] 설교 버튼을 항상 생성/보이는 상태로 만들고 클릭 핸들러 부착
-          (function ensureSermonBtn(){
-            const tb = body.querySelector('.ptoolbar');
-            if (!tb) return;
+        // [PATCH 1 START] 설교 버튼 생성/가시성만 보강 (클릭 바인딩 없음)
+        (function ensureSermonBtn(){
+          const tb = body.querySelector('.ptoolbar');
+          if (!tb) return;
 
-            // spacer 보정(없으면 생성)
-            if (!tb.querySelector('.spacer')) {
-              const sp = document.createElement('div');
-              sp.className = 'spacer';
-              tb.appendChild(sp);
-            }
-
-            // 설교 버튼 확보(있으면 재사용, 없으면 생성)
-            let sermBtn = tb.querySelector('.sermBtn');
-            if (!sermBtn) {
-              sermBtn = document.createElement('button');
-              sermBtn.className = 'sermBtn';
-              sermBtn.textContent = '설교';
-              tb.appendChild(sermBtn);
-            }
-
-            // 중복 핸들러 제거 후 안전하게 바인딩
-            sermBtn.onclick = null;
-            sermBtn.addEventListener('click', ()=>{
-              // 현재 단락을 CURRENT에 정확히 반영
-              CURRENT.book    = bookName;
-              CURRENT.chap    = chap;
-              CURRENT.paraIdx = idx;
-
-              const para = BIBLE?.books?.[bookName]?.[chap]?.paras?.[idx];
-              if (!para) return;
-
-              CURRENT.paraId = `${bookName}|${chap}|${para.ref}`;
-              openSermonModal();   // 모달 열기
-            });
-          })();
-          // [PATCH 1 END]
-
+          if (!tb.querySelector('.spacer')) {
+            const sp = document.createElement('div');
+            sp.className = 'spacer';
+            tb.appendChild(sp);
+          }
+          let sermBtn = tb.querySelector('.sermBtn');
+          if (!sermBtn) {
+            sermBtn = document.createElement('button');
+            sermBtn.className = 'sermBtn';
+            sermBtn.textContent = '설교';
+            tb.appendChild(sermBtn);
+          }
+        })();
+        // [PATCH 1 END]
 
         detPara.appendChild(body);
 
@@ -364,13 +345,13 @@ function buildTree(){
             const para = BIBLE.books[bookName][chap].paras[idx];
             CURRENT.paraId = `${bookName}|${chap}|${para.ref}`;
             status(`선택됨: ${bookName} ${chap}장 · ${para.title||para.ref}`);
-                /* ✅ 열릴 때마다 설교 버튼이 없으면 즉시 생성 */
+            // 열릴 때 설교 버튼 누락 시 즉시 생성 (클릭 바인딩 없음)
             const tb = detPara.querySelector('.ptoolbar');
             if (tb && !tb.querySelector('.sermBtn')) {
-            const btn = document.createElement('button');
-            btn.className = 'sermBtn';
-            btn.textContent = '설교';
-            tb.appendChild(btn);
+              const btn = document.createElement('button');
+              btn.className = 'sermBtn';
+              btn.textContent = '설교';
+              tb.appendChild(btn);
             }
           }
         });
@@ -378,12 +359,8 @@ function buildTree(){
         body.querySelector('.speakBtn').addEventListener('click', ()=>{
           toggleSpeakInline(bookName, chap, idx, detPara, body.querySelector('.speakBtn'));
         });
-        body.querySelector('.sermBtn').addEventListener('click', ()=>{
-          CURRENT.book = bookName; CURRENT.chap = chap; CURRENT.paraIdx = idx;
-          const para = BIBLE.books[bookName][chap].paras[idx];
-          CURRENT.paraId = `${bookName}|${chap}|${para.ref}`;
-          openSermonModal();
-        });
+
+        // 컨텍스트 에디터 버튼들
         body.querySelector('.btnUnitCtx').addEventListener('click', ()=>{ CURRENT.book=bookName; CURRENT.chap=chap; CURRENT.paraIdx=idx; openSingleDocEditor('unit'); });
         body.querySelector('.btnWholeCtx').addEventListener('click',()=>{ CURRENT.book=bookName; CURRENT.chap=chap; CURRENT.paraIdx=idx; openSingleDocEditor('whole'); });
         body.querySelector('.btnCommentary').addEventListener('click',()=>{ CURRENT.book=bookName; CURRENT.chap=chap; CURRENT.paraIdx=idx; openSingleDocEditor('commentary'); });
@@ -401,7 +378,7 @@ function buildTree(){
   }
 }
 
-// [PATCH 2 START] 렌더 후에도 설교 버튼 누락 시 자동 보정
+// [PATCH 2 START] 렌더 후에도 설교 버튼 누락 시 자동 보정(클릭 바인딩 없음)
 (function sermonBtnWatcher(){
   const root = document.getElementById('tree');
   if (!root) return;
@@ -416,23 +393,6 @@ function buildTree(){
       const b = document.createElement('button');
       b.className = 'sermBtn';
       b.textContent = '설교';
-
-      b.addEventListener('click', ()=>{
-        const paraEl = tb.closest('details.para');
-        const t = paraEl?.querySelector('summary .ptitle');
-        if (!t) return;
-
-        CURRENT.book    = t.dataset.book;
-        CURRENT.chap    = parseInt(t.dataset.ch, 10);
-        CURRENT.paraIdx = parseInt(t.dataset.idx, 10);
-
-        const para = BIBLE?.books?.[CURRENT.book]?.[CURRENT.chap]?.paras?.[CURRENT.paraIdx];
-        if (!para) return;
-
-        CURRENT.paraId = `${CURRENT.book}|${CURRENT.chap}|${para.ref}`;
-        openSermonModal();
-      });
-
       tb.appendChild(b);
     }
   }
@@ -441,19 +401,16 @@ function buildTree(){
     root.querySelectorAll('details.para .ptoolbar').forEach(fix);
   }
 
-  // 최초 1회 보정 + DOM 변화 감시
   sweep();
   new MutationObserver(sweep).observe(root, {subtree:true, childList:true});
 })();
 // [PATCH 2 END]
 
-/* ✅ 트리 렌더 후 설교 버튼이 누락됐을 때 자동 보강 */
+/* ✅ 트리 렌더 후 설교 버튼이 누락됐을 때 자동 보강(클릭 바인딩 없음) */
 function ensureSermonButtons(){
   document.querySelectorAll('#tree details.para .ptoolbar').forEach(tb=>{
-    // 이미 있으면 패스
     if (tb.querySelector('.sermBtn')) return;
 
-    // spacer 보정
     let spacer = tb.querySelector('.spacer');
     if (!spacer) {
       spacer = document.createElement('div');
@@ -461,33 +418,14 @@ function ensureSermonButtons(){
       tb.appendChild(spacer);
     }
 
-    // 설교 버튼 생성
     const btn = document.createElement('button');
     btn.className = 'sermBtn';
     btn.textContent = '설교';
-
-    // 클릭 핸들러: 현재 단락 동기화 후 모달 열기
-    btn.addEventListener('click', ()=>{
-      const paraEl = tb.closest('details.para');
-      const t = paraEl?.querySelector('summary .ptitle');
-      if (!t) return;
-
-      CURRENT.book     = t.dataset.book;
-      CURRENT.chap     = parseInt(t.dataset.ch, 10);
-      CURRENT.paraIdx  = parseInt(t.dataset.idx, 10);
-
-      const para = BIBLE?.books?.[CURRENT.book]?.[CURRENT.chap]?.paras?.[CURRENT.paraIdx];
-      if (!para) return;
-
-      CURRENT.paraId = `${CURRENT.book}|${CURRENT.chap}|${para.ref}`;
-      openSermonModal();        // ✅ 빈 목록이어도 startNewSermon()로 바로 진입
-    });
-
     tb.appendChild(btn);
   });
 }
 
-/* 🔧 트리 위임 클릭 공용 처리 */
+/* 🔧 트리 위임 클릭 공용 처리 (유일한 클릭 바인딩) */
 treeEl.addEventListener('click', (e)=>{
   const isCtxBtn = e.target.closest('.btnSummary, .btnUnitCtx, .btnWholeCtx, .btnCommentary, .sermBtn');
   if (!isCtxBtn) return;
@@ -683,7 +621,6 @@ function setDocMap(storageKey, obj){ localStorage.setItem(storageKey, JSON.strin
 
 /* ✅ 최초 클릭 시에도 동작하도록 보강 + 중복편집기 제거 전제 */
 function openSermonModal(){
-  // 현재 열린 단락에서 안전하게 CURRENT 세팅
   if (!CURRENT.book || !Number.isFinite(CURRENT.chap) || !Number.isFinite(CURRENT.paraIdx)) {
     if (!syncCurrentFromOpen()) {
       alert('단락을 먼저 선택해 주세요.');
@@ -764,14 +701,13 @@ function openSingleDocEditor(kind){
   }
 }
 
-/* ✅ 설교목록 렌더링: 편집 앞에 "링크"란 + 즉시 클릭으로 열림 */
+/* ✅ 설교목록 렌더링 */
 function renderSermonList(){
   const map = getSermonMap();
   const arr = map[CURRENT.paraId] || [];
   sermonList.innerHTML = '';
 
   if(arr.length===0){
-    // 첫 진입 시 바로 새편집 진입 (요청 흐름 유지)
     startNewSermon();
     return;
   }
@@ -779,7 +715,6 @@ function renderSermonList(){
   arr.forEach((it, idx)=>{
     const row = document.createElement('div'); row.className='item';
 
-    // 링크 상자 (입력 + 즉시열기 앵커)
     const linkBox = document.createElement('div');
     linkBox.className = 'link-box';
     const linkInput = document.createElement('input');
@@ -799,7 +734,6 @@ function renderSermonList(){
         a[idx].link = url;
         setSermonMap(m);
       }
-      // 앵커 갱신
       if (url){
         linkAnchor.href = url; linkAnchor.textContent = url;
         linkAnchor.style.display='';
@@ -839,7 +773,6 @@ function renderSermonList(){
     toolbar.appendChild(editBtn);
     toolbar.appendChild(delBtn);
 
-    // 행 조립: [링크] [제목] [툴바]
     row.appendChild(linkBox);
     row.appendChild(titleDiv);
     row.appendChild(toolbar);
@@ -1512,7 +1445,7 @@ function initSermonPopup(win){
     }catch(err){ console.error(err); w.alert('게시 실패: '+err.message); }
   });
 
-  // 성경구절 삽입 — 헤더 "<요한복음 3:16>" 바로 밑에 구절들 붙여 출력
+  // 성경구절 삽입
   d.getElementById('btnInsertBibleFloating')?.addEventListener('click', insertBiblePrompt);
   async function insertBiblePrompt(){
     const raw = w.prompt('삽입할 성경구절 (예: 요 3:16, 창세기 1:1-3)');
@@ -1535,7 +1468,6 @@ function initSermonPopup(win){
     const verses=(ch.paras||[]).flatMap(p=>p.verses||[]).filter(([v])=>v>=vFrom&&v<=vTo);
     if(!verses.length){ w.alert('해당 구절을 찾을 수 없습니다.'); return; }
 
-    // 헤더 + 본문(줄 띄움 없이 바로 이어서)
     const header = `<div class="verse-header">&lt;${bookKey} ${chap}:${vFrom}${vTo!==vFrom?'-'+vTo:''}&gt;</div>`;
     const html = verses.map(([v,t])=>`<span class="verse-line"><sup>${v}</sup>${t}</span>`).join('');
     const blockHTML = header + html;
