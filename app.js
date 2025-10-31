@@ -1088,8 +1088,40 @@ button:hover{border-color:color-mix(in hsl,var(--border) 75%,var(--accent) 25%)}
   header, footer, #floatingBar { display:none !important; }
 }
 
-html, body { height:auto !important; overflow:auto !important; }
-main { height:auto !important; overflow:visible !important; }
+/* === 편집기(main) 스크롤 및 겹침 방지 보정 === */
+/* body를 3행 그리드(헤더/메인/푸터)로, 메인은 스크롤 가능 */
+body{
+  display: grid;
+  grid-template-rows: 56px 1fr 56px;
+  height: 100vh !important;
+  overflow: hidden !important;
+}
+
+/* main은 스크롤이 가능해야 함 + footer/floatingBar에 가리지 않도록 하단 여백 */
+main{
+  position: relative;
+  z-index: 1;
+  overflow-y: auto !important;
+  padding-top: 12px;
+  padding-bottom: 140px; /* footer 높이 + 여유 */
+  height: calc(100vh - 112px) !important; /* 56(header)+56(footer) */
+}
+
+/* 편집 영역 자체 여백 확보(아래쪽 충분히 띄워서 겹침 방지) */
+#editorRoot{
+  position: relative;
+  z-index: 1;
+  max-width: 880px;
+  margin: 12px auto 100px;  /* 아래 여유 */
+  padding: 0 8px 80px;      /* 아래 여유 */
+  overflow: visible;
+}
+
+/* 플로팅 버튼과의 겹침도 최소화(필요 시) */
+#floatingBar{
+  z-index: 50;
+}
+
 </style>
 </head>
 <body class="context-editor">
