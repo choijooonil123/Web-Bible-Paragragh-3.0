@@ -1133,6 +1133,7 @@ main { height:auto !important; overflow:visible !important; }
 </header>
 
 <main>
+  <input id="t" class="title-input" type="text" autocomplete="off" placeholder="설교 제목을 입력하세요">
   <div class="notion-header">
     <input id="neTitle" class="title" placeholder="제목을 입력하세요" />
     <div class="meta">
@@ -1153,6 +1154,14 @@ main { height:auto !important; overflow:visible !important; }
 
   <div id="neSlash" class="slash hidden"></div>
   <div id="editorRoot" aria-label="Sermon Editor"></div>
+
+  <div class="notion-footer">
+    <div class="notion-badge" id="neAutosave">자동저장 대기중…</div>
+    <details style="margin-top:6px">
+      <summary>🎧 Sermon Tracer 로그/타임라인</summary>
+      <div id="traceLog"></div>
+    </details>
+  </div>
 </main>
 
 <div id="floatingBar" aria-label="도구 막대">
