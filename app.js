@@ -626,19 +626,7 @@ function renderSermonList(){
   const map = getSermonMap();
   const arr = map[CURRENT.paraId] || [];
   sermonList.innerHTML = '';
-
-  // ✅ 설교가 없으면 모달 에디터 대신, 새 설교 생성 후 곧바로 '설교편집 에디터(팝업)' 열기
-  if (arr.length === 0) {
-    const newId = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()));
-    map[CURRENT.paraId] = [{ id: newId, title: '', body: '', images: [], date: '', link: '' }];
-    setSermonMap(map);
-
-    // 모달 닫고 팝업 에디터로 바로 이동
-    modalWrap.style.display = 'none';
-    modalWrap.setAttribute('aria-hidden', 'true');
-    openSermonEditorWindow(0);
-    return;
-  }
+  if(arr.length===0){ startNewSermon(); return; }
 
   arr.forEach((it, idx)=>{
     const row = document.createElement('div');
