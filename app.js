@@ -1121,7 +1121,7 @@ main{
 #floatingBar{
   z-index: 50;
 }
-
+html, body { height:auto !important; overflow:auto !important; }
 main { height:auto !important; overflow:visible !important; }
 </style>
 </head>
