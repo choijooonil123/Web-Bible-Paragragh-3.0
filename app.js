@@ -114,6 +114,7 @@ let EDITOR_READER = { playing:false, u:null, synth:window.speechSynthesis||null 
     catch(e){ status('bible-paragraph.json을 찾을 수 없습니다. 같은 폴더에 두고 다시 열어주세요.'); return; }
   }
   buildTree();
+  ensureSermonButtons();   // 🔧 설교 버튼 누락 시 보강
   status('불러오기 완료. 66권 트리가 활성화되었습니다.');
   await setupVoices();
 })();
@@ -350,6 +351,46 @@ function buildTree(){
     detBook.appendChild(chWrap);
     treeEl.appendChild(detBook);
   }
+}
+
+/* ✅ 트리 렌더 후 설교 버튼이 누락됐을 때 자동 보강 */
+function ensureSermonButtons(){
+  document.querySelectorAll('#tree details.para .ptoolbar').forEach(tb=>{
+    // 이미 있으면 패스
+    if (tb.querySelector('.sermBtn')) return;
+
+    // spacer 보정
+    let spacer = tb.querySelector('.spacer');
+    if (!spacer) {
+      spacer = document.createElement('div');
+      spacer.className = 'spacer';
+      tb.appendChild(spacer);
+    }
+
+    // 설교 버튼 생성
+    const btn = document.createElement('button');
+    btn.className = 'sermBtn';
+    btn.textContent = '설교';
+
+    // 클릭 핸들러: 현재 단락 동기화 후 모달 열기
+    btn.addEventListener('click', ()=>{
+      const paraEl = tb.closest('details.para');
+      const t = paraEl?.querySelector('summary .ptitle');
+      if (!t) return;
+
+      CURRENT.book     = t.dataset.book;
+      CURRENT.chap     = parseInt(t.dataset.ch, 10);
+      CURRENT.paraIdx  = parseInt(t.dataset.idx, 10);
+
+      const para = BIBLE?.books?.[CURRENT.book]?.[CURRENT.chap]?.paras?.[CURRENT.paraIdx];
+      if (!para) return;
+
+      CURRENT.paraId = `${CURRENT.book}|${CURRENT.chap}|${para.ref}`;
+      openSermonModal();        // ✅ 빈 목록이어도 startNewSermon()로 바로 진입
+    });
+
+    tb.appendChild(btn);
+  });
 }
 
 /* 🔧 트리 위임 클릭 공용 처리 */
