@@ -307,16 +307,45 @@ function buildTree(){
             <button class="sermBtn">설교</button>
           </div>
           <div class="pcontent"></div>`;
-          /* ✅ innerHTML 파싱 이슈 대비: 설교 버튼 최종 보강 */
-            {
+
+          // [PATCH 1 START] 설교 버튼을 항상 생성/보이는 상태로 만들고 클릭 핸들러 부착
+          (function ensureSermonBtn(){
             const tb = body.querySelector('.ptoolbar');
-            if (tb && !tb.querySelector('.sermBtn')) {
-                const btn = document.createElement('button');
-                btn.className = 'sermBtn';
-                btn.textContent = '설교';
-                tb.appendChild(btn);
+            if (!tb) return;
+
+            // spacer 보정(없으면 생성)
+            if (!tb.querySelector('.spacer')) {
+              const sp = document.createElement('div');
+              sp.className = 'spacer';
+              tb.appendChild(sp);
             }
+
+            // 설교 버튼 확보(있으면 재사용, 없으면 생성)
+            let sermBtn = tb.querySelector('.sermBtn');
+            if (!sermBtn) {
+              sermBtn = document.createElement('button');
+              sermBtn.className = 'sermBtn';
+              sermBtn.textContent = '설교';
+              tb.appendChild(sermBtn);
             }
+
+            // 중복 핸들러 제거 후 안전하게 바인딩
+            sermBtn.onclick = null;
+            sermBtn.addEventListener('click', ()=>{
+              // 현재 단락을 CURRENT에 정확히 반영
+              CURRENT.book    = bookName;
+              CURRENT.chap    = chap;
+              CURRENT.paraIdx = idx;
+
+              const para = BIBLE?.books?.[bookName]?.[chap]?.paras?.[idx];
+              if (!para) return;
+
+              CURRENT.paraId = `${bookName}|${chap}|${para.ref}`;
+              openSermonModal();   // 모달 열기
+            });
+          })();
+          // [PATCH 1 END]
+
 
         detPara.appendChild(body);
 
@@ -371,6 +400,52 @@ function buildTree(){
     treeEl.appendChild(detBook);
   }
 }
+
+// [PATCH 2 START] 렌더 후에도 설교 버튼 누락 시 자동 보정
+(function sermonBtnWatcher(){
+  const root = document.getElementById('tree');
+  if (!root) return;
+
+  function fix(tb){
+    if (!tb.querySelector('.spacer')) {
+      const sp = document.createElement('div');
+      sp.className = 'spacer';
+      tb.insertBefore(sp, tb.firstChild);
+    }
+    if (!tb.querySelector('.sermBtn')) {
+      const b = document.createElement('button');
+      b.className = 'sermBtn';
+      b.textContent = '설교';
+
+      b.addEventListener('click', ()=>{
+        const paraEl = tb.closest('details.para');
+        const t = paraEl?.querySelector('summary .ptitle');
+        if (!t) return;
+
+        CURRENT.book    = t.dataset.book;
+        CURRENT.chap    = parseInt(t.dataset.ch, 10);
+        CURRENT.paraIdx = parseInt(t.dataset.idx, 10);
+
+        const para = BIBLE?.books?.[CURRENT.book]?.[CURRENT.chap]?.paras?.[CURRENT.paraIdx];
+        if (!para) return;
+
+        CURRENT.paraId = `${CURRENT.book}|${CURRENT.chap}|${para.ref}`;
+        openSermonModal();
+      });
+
+      tb.appendChild(b);
+    }
+  }
+
+  function sweep(){
+    root.querySelectorAll('details.para .ptoolbar').forEach(fix);
+  }
+
+  // 최초 1회 보정 + DOM 변화 감시
+  sweep();
+  new MutationObserver(sweep).observe(root, {subtree:true, childList:true});
+})();
+// [PATCH 2 END]
 
 /* ✅ 트리 렌더 후 설교 버튼이 누락됐을 때 자동 보강 */
 function ensureSermonButtons(){
