@@ -307,6 +307,17 @@ function buildTree(){
             <button class="sermBtn">설교</button>
           </div>
           <div class="pcontent"></div>`;
+          /* ✅ innerHTML 파싱 이슈 대비: 설교 버튼 최종 보강 */
+            {
+            const tb = body.querySelector('.ptoolbar');
+            if (tb && !tb.querySelector('.sermBtn')) {
+                const btn = document.createElement('button');
+                btn.className = 'sermBtn';
+                btn.textContent = '설교';
+                tb.appendChild(btn);
+            }
+            }
+
         detPara.appendChild(body);
 
         const pcontent = body.querySelector('.pcontent');
@@ -324,6 +335,14 @@ function buildTree(){
             const para = BIBLE.books[bookName][chap].paras[idx];
             CURRENT.paraId = `${bookName}|${chap}|${para.ref}`;
             status(`선택됨: ${bookName} ${chap}장 · ${para.title||para.ref}`);
+                /* ✅ 열릴 때마다 설교 버튼이 없으면 즉시 생성 */
+            const tb = detPara.querySelector('.ptoolbar');
+            if (tb && !tb.querySelector('.sermBtn')) {
+            const btn = document.createElement('button');
+            btn.className = 'sermBtn';
+            btn.textContent = '설교';
+            tb.appendChild(btn);
+            }
           }
         });
 
