@@ -31,8 +31,10 @@
     button{
       background:color-mix(in hsl, var(--panel) 65%, black 10%); color:var(--text);
       border:1px solid var(--border); border-radius:10px; padding:6px 10px; cursor:pointer;
+      transition:border-color .15s, transform .04s;
     }
     button:hover{ border-color:color-mix(in hsl, var(--border) 80%, var(--accent) 20%) }
+    button:active{ transform:translateY(1px) }
     .primary{
       background:linear-gradient(180deg,color-mix(in srgb, var(--accent) 75%, white 10%), color-mix(in srgb, var(--accent) 75%, black 20%));
       border-color:color-mix(in srgb, var(--accent) 70%, black 10%);
@@ -74,9 +76,9 @@
       position:sticky; top:0; background:var(--panel); padding:12px 14px;
       display:flex; gap:10px; align-items:center; border-bottom:1px solid var(--border)
     }
-    .list{ padding:12px 14px; display:grid; gap:0 }
-    .item{ border:1px solid var(--border); border-radius:10px; padding:2px 8px; display:flex; justify-content:space-between; align-items:center; gap:8px }
-    .item-title{ font-weight:700; color:var(--titleBlue); line-height:1.15 }
+    .list{ padding:12px 14px; display:grid; gap:8px }
+    .item{ border:1px solid var(--border); border-radius:10px; padding:6px 10px; display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap }
+    .item-title{ font-weight:700; color:var(--titleBlue); line-height:1.15; display:flex; align-items:center; gap:8px; flex-wrap:wrap }
     .item-title .date{ margin-left:8px; color:var(--muted); font-weight:400; font-size:.92em }
 
     .editor{ padding:14px; display:grid; gap:12px; background:var(--panel) }
@@ -136,17 +138,16 @@
       height: calc(94vh - 56px); min-height: calc(94vh - 56px); max-height: calc(94vh - 56px);
       overflow: hidden;
     }
-    /* sermonBody 전체를 위로 꽉 채우기 */
     #sermonEditor .rte {
       flex: 1 1 auto;
       min-height: 0;
       overflow-y: auto;
-      padding-top: 0 !important;  /* 🔹 상단 여백 제거 */
-      margin-top: 0 !important;   /* 🔹 외부 여백 제거 */
+      padding-top: var(--editor-pad-top, 0px);
+      margin-top: 0 !important;
+      scroll-padding-top: var(--editor-pad-top, 0px);
     }
 
-    /* 모달 RTE 툴바 고정 */
-    /* 툴바 고정 */
+    /* RTE 툴바 고정 */
     #rteToolbar {
       position: sticky;
       top: 0;
@@ -155,26 +156,26 @@
       border-bottom: 1px solid var(--border);
     }
 
-    /* 본문 상단 패딩(툴바 높이 반영) */
-    #sermonEditor .rte {
-      flex: 1 1 auto;
-      overflow-y: auto;
-      padding-top: var(--editor-pad-top, 0px);
-      scroll-padding-top: var(--editor-pad-top, 0px);
-    }
-    
-    #sermonTitle {
-      display: none !important;
-    }
-
     /* ===== 삽입된 성경구절 스타일 ===== */
-    .inserted-verse {
-      font-style: italic;     /* 기울임 */
-      color: #ff8080;         /* 밝은 빨강 */
-    }
+    .inserted-verse { font-style: italic; color: #ff8080; }
+    .verse-header { margin-bottom:2px; }
+    .verse-line { font-style: italic; color:#ff8080; }
 
-    
- </style>
+    /* 설교목록 링크 필드 */
+    .link-box{
+      display:flex; align-items:center; gap:6px; min-width:260px; flex:1 1 320px;
+    }
+    .link-box input{
+      flex:1 1 auto; min-width:200px;
+      background:#161922;color:#e6e8ef;border:1px solid #2a3040;border-radius:8px;padding:6px 8px
+    }
+    .link-box a{
+      text-decoration:underline; color:#9fd0ff; word-break:break-all;
+      max-width:280px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    }
+    .ptoolbar .sermBtn{ margin-left:auto }
+  </style>
+
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600&family=Nanum+Myeongjo&display=swap" rel="stylesheet">
 </head>
 <body>
@@ -227,10 +228,11 @@
         <div class="grow"></div>
         <button id="closeModal">닫기</button>
       </div>
-      <div class="list" id="sermonList"></div> 
 
-      <div class="editor" id="sermonEditor" style="display:none">
-        <!-- ✅ 플로팅 툴바 추가 -->
+      <div class="list" id="sermonList"></div>
+
+      <!-- 단일 편집기 (중복 제거) -->
+      <div class="editor context-editor" id="sermonEditor" style="display:none">
         <div id="rteToolbar" class="editor-bar">
           <button type="button" onclick="execFmt('bold')"><b>B</b></button>
           <button type="button" onclick="execFmt('italic')"><i>I</i></button>
@@ -238,22 +240,10 @@
           <button type="button" onclick="execFmt('strikeThrough')"><s>S</s></button>
           <div class="grow"></div>
         </div>
-      
-        <!-- 본문 -->
+
+        <input id="sermonTitle" type="text" placeholder="제목" style="display:none" />
         <div id="sermonBody" class="rte" contenteditable="true" spellcheck="false"></div>
-      
-        <div class="editor-bar">
-          <div class="grow"></div>
-          <button id="editorSpeak" class="primary">낭독</button>
-          <button id="saveSermon" class="primary">저장</button>
-        </div>
-      </div>
 
-        
-        <!-- 본문 RTE -->
-        <div id="sermonBody" class="rte" contenteditable="true" spellcheck="false" placeholder="내용"></div>
-
-        <!-- 하단 바(파일선택 제거) -->
         <div class="editor-bar">
           <div class="grow"></div>
           <button id="editorSpeak" class="primary">낭독</button>
@@ -267,7 +257,6 @@
     </div>
   </div>
 
-  <!-- 분리된 스크립트 -->
   <script src="app.js" defer></script>
 </body>
 </html>
