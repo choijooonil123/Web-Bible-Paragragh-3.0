@@ -640,9 +640,63 @@ function renderSermonList(){
     return;
   }
 
-  // (이하 기존 목록 렌더링 로직 그대로 유지)
-  arr.forEach((it, idx) => {
-    ...
+  arr.forEach((it, idx)=>{
+    const row = document.createElement('div');
+    row.className = 'item';
+    row.style.display = 'flex';
+    row.style.alignItems = 'center';
+    row.style.gap = '8px';
+
+    const dateHtml = it.date ? `<span class="date">${it.date}</span>` : '';
+    row.innerHTML = `
+      <div class="item-title" style="flex:1 1 auto; min-width:0;">
+        ${escapeHtml(it.title||'(제목 없음)')} ${dateHtml}
+      </div>
+
+      <!-- 🔗 링크 입력란 (클릭 시 바로 열림) -->
+      <label class="muted" style="white-space:nowrap;">링크</label>
+      <input type="text" class="sermonLinkInput" placeholder="https://..."
+             value="${it.link ? escapeHtml(it.link) : ''}"
+             style="width:240px;padding:4px 6px;border-radius:6px;border:1px solid var(--border);background:var(--panel);color:var(--text);cursor:pointer;text-decoration:underline;" />
+
+      <div class="ptoolbar" style="display:flex;gap:6px;">
+        <button data-edit="${idx}">편집</button>
+        <button data-del="${idx}" style="border-color:var(--danger);color:var(--text)">삭제</button>
+      </div>
+    `;
+
+    // 편집/삭제 동작
+    row.querySelector('[data-edit]').onclick = ()=>{
+      modalWrap.style.display = 'none';
+      modalWrap.setAttribute('aria-hidden','true');
+      openSermonEditorWindow(idx);
+    };
+    row.querySelector('[data-del]').onclick = ()=> deleteSermon(idx);
+
+    // 🔗 링크 입력 즉시 저장 + 클릭시 바로 열기
+    const linkInput = row.querySelector('.sermonLinkInput');
+
+    // 값 변경 시 저장
+    linkInput.addEventListener('change', ()=>{
+      const val = linkInput.value.trim();
+      const map2 = getSermonMap();
+      const arr2 = map2[CURRENT.paraId] || [];
+      if(arr2[idx]){
+        arr2[idx].link = val;
+        map2[CURRENT.paraId] = arr2;
+        setSermonMap(map2);
+      }
+    });
+
+    // 클릭 시 새 탭 열기 (noopener)
+    linkInput.addEventListener('click', (e)=>{
+      const url = e.target.value.trim();
+      if(!url) return;
+      const safe = /^https?:\/\//i.test(url) ? url : ('https://' + url);
+      window.open(safe, '_blank', 'noopener');
+    });
+
+    sermonList.appendChild(row);
   });
 }
 
