@@ -304,7 +304,6 @@ function buildTree(){
             <button class="ctxBtn btnWholeCtx">전체성경속 맥락</button>
             <button class="ctxBtn btnCommentary">주석</button>
             <button class="sermBtn">설교</button>
-            <div class="spacer"></div>
           </div>
           <div class="pcontent"></div>`;
 
