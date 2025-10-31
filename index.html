@@ -65,7 +65,7 @@
 
     .pbody{ margin-top:8px; border-top:1px dashed var(--border); padding-top:8px }
     .ptoolbar{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:8px }
-    
+
     /* ✅ 설교 버튼이 가려지거나 사라지는 것 방지 */
     .ptoolbar .spacer { flex: 1 1 auto; }
     .ptoolbar .sermBtn { display: inline-flex; }
@@ -179,6 +179,10 @@
       max-width:280px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
     }
     .ptoolbar .sermBtn{ margin-left:auto }
+    
+    /* 응급: 설교 버튼 가시성 강제 */
+    .ptoolbar .sermBtn { display:inline-flex !important; visibility:visible !important; opacity:1 !important; }
+
   </style>
 
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600&family=Nanum+Myeongjo&display=swap" rel="stylesheet">
