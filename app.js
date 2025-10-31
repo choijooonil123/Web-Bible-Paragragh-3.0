@@ -303,8 +303,8 @@ function buildTree(){
             <button class="ctxBtn btnUnitCtx">단위성경속 맥락</button>
             <button class="ctxBtn btnWholeCtx">전체성경속 맥락</button>
             <button class="ctxBtn btnCommentary">주석</button>
-            <div class="spacer"></div>
             <button class="sermBtn">설교</button>
+            <div class="spacer"></div>
           </div>
           <div class="pcontent"></div>`;
 
