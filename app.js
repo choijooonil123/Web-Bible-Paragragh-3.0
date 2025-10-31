@@ -1227,6 +1227,25 @@ main { height:auto !important; overflow:visible !important; }
 function initSermonPopup(win){
   const w = win, d = w.document;
 
+    // ===== 중복 제목 입력 숨기기(팝업 한정) =====
+  (function removeDuplicateTitle() {
+    const d = win.document;
+    // 현재 사용 중인 제목 입력칸
+    const mainTitle = d.getElementById('neTitle');
+    if (!mainTitle) return;
+
+    // 예전 제목 input(#t 등)이 있다면 숨김
+    const dupCandidates = [
+      ...d.querySelectorAll('input#t, input[type="text"].title-input')
+    ].filter(el => el !== mainTitle);
+
+    dupCandidates.forEach(el => {
+      el.style.display = 'none';
+      el.setAttribute('aria-hidden', 'true');
+    });
+  })();
+
+
   const $ = id => d.getElementById(id);
   const meta = w.__WBPS_META__ || {};
 
