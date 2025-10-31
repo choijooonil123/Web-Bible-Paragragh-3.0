@@ -304,6 +304,7 @@ function buildTree(){
             <button class="ctxBtn btnWholeCtx">전체성경속 맥락</button>
             <button class="ctxBtn btnCommentary">주석</button>
             <button class="sermBtn">설교</button>
+            <div class="spacer"></div>
           </div>
           <div class="pcontent"></div>`;
 
@@ -701,6 +702,7 @@ function openSingleDocEditor(kind){
 }
 
 /* ✅ 설교목록 렌더링 */
+/* ✅ 설교목록 렌더링 (제목 → 날짜 → 링크 → 편집 → 삭제 순서) */
 function renderSermonList(){
   const map = getSermonMap();
   const arr = map[CURRENT.paraId] || [];
@@ -712,69 +714,96 @@ function renderSermonList(){
   }
 
   arr.forEach((it, idx)=>{
-    const row = document.createElement('div'); row.className='item';
+    const row = document.createElement('div');
+    row.className = 'item'; // 필요시 레이아웃용 CSS를 추가할 수 있어요.
 
-    const linkBox = document.createElement('div');
-    linkBox.className = 'link-box';
+    // 1) 제목
+    const colTitle = document.createElement('div');
+    colTitle.className = 'col col-title';
+    colTitle.textContent = (it.title || '(제목 없음)');
+
+    // 2) 작성날짜
+    const colDate = document.createElement('div');
+    colDate.className = 'col col-date';
+    colDate.textContent = (it.date || '');
+
+    // 3) 링크 (입력 + 미리보기 앵커)
+    const colLink = document.createElement('div');
+    colLink.className = 'col col-link';
+
     const linkInput = document.createElement('input');
     linkInput.type = 'url';
     linkInput.placeholder = '링크(URL)';
     linkInput.value = it.link || '';
+    linkInput.style.minWidth = '220px';
+
     const linkAnchor = document.createElement('a');
     linkAnchor.textContent = it.link ? it.link : '';
-    if (it.link) { linkAnchor.href = it.link; linkAnchor.target = '_blank'; linkAnchor.rel='noopener noreferrer'; }
-    else { linkAnchor.style.display='none'; }
+    if (it.link) {
+      linkAnchor.href = it.link;
+      linkAnchor.target = '_blank';
+      linkAnchor.rel = 'noopener noreferrer';
+    } else {
+      linkAnchor.style.display = 'none';
+    }
 
     linkInput.addEventListener('change', ()=>{
       const url = linkInput.value.trim();
       const m = getSermonMap();
       const a = m[CURRENT.paraId] || [];
-      if (a[idx]){
+      if (a[idx]) {
         a[idx].link = url;
         setSermonMap(m);
       }
       if (url){
-        linkAnchor.href = url; linkAnchor.textContent = url;
-        linkAnchor.style.display='';
-        linkAnchor.target = '_blank'; linkAnchor.rel='noopener noreferrer';
-      }else{
+        linkAnchor.href = url;
+        linkAnchor.textContent = url;
+        linkAnchor.style.display = '';
+        linkAnchor.target = '_blank';
+        linkAnchor.rel = 'noopener noreferrer';
+      } else {
         linkAnchor.removeAttribute('href');
         linkAnchor.textContent = '';
-        linkAnchor.style.display='none';
+        linkAnchor.style.display = 'none';
       }
     });
 
-    linkBox.appendChild(linkInput);
-    linkBox.appendChild(linkAnchor);
+    colLink.appendChild(linkInput);
+    colLink.appendChild(linkAnchor);
 
-    const dateHtml = it.date ? `<span class="date">${it.date}</span>` : '';
-    const titleDiv = document.createElement('div');
-    titleDiv.className = 'item-title';
-    titleDiv.innerHTML = `${escapeHtml(it.title||'(제목 없음)')} ${dateHtml}`;
-
-    const toolbar = document.createElement('div');
-    toolbar.className = 'ptoolbar';
-    const editBtn = document.createElement('button');
-    editBtn.textContent = '편집';
-    editBtn.setAttribute('data-edit', idx);
-    const delBtn = document.createElement('button');
-    delBtn.textContent = '삭제';
-    delBtn.setAttribute('data-del', idx);
-    delBtn.style.borderColor = 'var(--danger)';
-    delBtn.style.color = 'var(--text)';
-
-    editBtn.onclick = ()=>{
-      modalWrap.style.display = 'none'; modalWrap.setAttribute('aria-hidden','true');
+    // 4) 편집 버튼
+    const btnEdit = document.createElement('button');
+    btnEdit.textContent = '편집';
+    btnEdit.addEventListener('click', ()=>{
+      modalWrap.style.display = 'none';
+      modalWrap.setAttribute('aria-hidden','true');
       openSermonEditorWindow(idx);
-    };
-    delBtn.onclick = ()=> deleteSermon(idx);
+    });
 
-    toolbar.appendChild(editBtn);
-    toolbar.appendChild(delBtn);
+    // 5) 삭제 버튼
+    const btnDel = document.createElement('button');
+    btnDel.textContent = '삭제';
+    btnDel.style.borderColor = 'var(--danger)';
+    btnDel.addEventListener('click', ()=>{
+      if(!confirm('이 설교를 삭제할까요?')) return;
+      const m = getSermonMap();
+      const a = m[CURRENT.paraId] || [];
+      a.splice(idx,1);
+      m[CURRENT.paraId] = a;
+      setSermonMap(m);
+      renderSermonList();
+    });
 
-    row.appendChild(linkBox);
-    row.appendChild(titleDiv);
-    row.appendChild(toolbar);
+    const colActions = document.createElement('div');
+    colActions.className = 'col col-actions';
+    colActions.appendChild(btnEdit);
+    colActions.appendChild(btnDel);
+
+    // 👉 순서대로 추가: 제목 → 날짜 → 링크 → 편집/삭제
+    row.appendChild(colTitle);
+    row.appendChild(colDate);
+    row.appendChild(colLink);
+    row.appendChild(colActions);
 
     sermonList.appendChild(row);
   });
