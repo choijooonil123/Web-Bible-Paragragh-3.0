@@ -65,6 +65,11 @@
 
     .pbody{ margin-top:8px; border-top:1px dashed var(--border); padding-top:8px }
     .ptoolbar{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:8px }
+    
+    /* ✅ 설교 버튼이 가려지거나 사라지는 것 방지 */
+    .ptoolbar .spacer { flex: 1 1 auto; }
+    .ptoolbar .sermBtn { display: inline-flex; }
+
     .pline{ padding:4px 6px; border-left:3px solid transparent; border-radius:8px; transition: background .15s, border-color .15s }
     .pline:hover{ background:color-mix(in hsl, var(--panel) 80%, black 12%) }
     .pline.reading{ background:color-mix(in hsl, var(--accent) 15%, black 0%); border-left-color:var(--accent) }
