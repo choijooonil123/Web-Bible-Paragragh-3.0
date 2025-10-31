@@ -1122,6 +1122,7 @@ main{
   z-index: 50;
 }
 
+main { height:auto !important; overflow:visible !important; }
 </style>
 </head>
 <body class="context-editor">
@@ -1152,14 +1153,6 @@ main{
 
   <div id="neSlash" class="slash hidden"></div>
   <div id="editorRoot" aria-label="Sermon Editor"></div>
-
-  <div class="notion-footer">
-    <div class="notion-badge" id="neAutosave">자동저장 대기중…</div>
-    <details style="margin-top:6px">
-      <summary>🎧 Sermon Tracer 로그/타임라인</summary>
-      <div id="traceLog"></div>
-    </details>
-  </div>
 </main>
 
 <div id="floatingBar" aria-label="도구 막대">
