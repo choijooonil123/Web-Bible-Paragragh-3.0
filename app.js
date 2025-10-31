@@ -1100,7 +1100,6 @@ main { height:auto !important; overflow:visible !important; }
 </header>
 
 <main>
-  <input id="t" class="title-input" type="text" autocomplete="off" placeholder="설교 제목을 입력하세요">
   <div class="notion-header">
     <input id="neTitle" class="title" placeholder="제목을 입력하세요" />
     <div class="meta">
