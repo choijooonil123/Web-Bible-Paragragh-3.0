@@ -1521,6 +1521,85 @@ function initSermonPopup(win) {
     d.getElementById('read').textContent = '낭독';
   }
 
+// --- 문장 하이라이트 유틸 ---
+function splitToSentences(text){
+  // 한국어/영어 마침표, ? ! … 및 전각 기호 포함
+  const re = /(.+?[\.\?\!…！？。]+)(\s+|$)/gus;
+  const out=[]; let m, last=0;
+  while((m=re.exec(text))){ out.push({t:m[1], s:m.index, e: m.index+m[1].length}); last = re.lastIndex; }
+  if(last < text.length){ const tail = text.slice(last).trim(); if(tail) out.push({t:tail, s:last, e:text.length}); }
+  return out;
+}
+function textNodesUnder(el){
+  const w = el.ownerDocument.createTreeWalker(el, NodeFilter.SHOW_TEXT, {
+    acceptNode(n){ return n.nodeValue.trim() ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT; }
+  });
+  const arr=[]; while(w.nextNode()) arr.push(w.currentNode); return arr;
+}
+function wrapSentencesOnce(root){
+  // 이미 래핑돼 있으면 스킵
+  if(root.querySelector('.tts-sent')) return;
+
+  const nodes = textNodesUnder(root);
+  // 텍스트 전체 인덱스 매핑
+  let offset = 0;
+  const indexMap = nodes.map(n => { const len = n.nodeValue.length; const obj = {node:n, start:offset, end:offset+len}; offset += len; return obj; });
+
+  const full = nodes.map(n=>n.nodeValue).join('');
+  const sents = splitToSentences(full);
+  if(!sents.length) return;
+
+  // 문장별로 Range를 만들어 <span class="tts-sent">로 감싼다
+  const d = root.ownerDocument;
+  sents.forEach(sn=>{
+    // 범위를 구성
+    let startPos=null, endPos=null;
+    for(const m of indexMap){
+      if(startPos===null && sn.s < m.end){
+        startPos = { node:m.node, offset: Math.max(0, sn.s - m.start) };
+      }
+      if(sn.e <= m.end){
+        endPos = { node:m.node, offset: Math.max(0, sn.e - m.start) };
+        break;
+      }
+    }
+    if(!startPos || !endPos) return;
+    const r = d.createRange();
+    r.setStart(startPos.node, startPos.offset);
+    r.setEnd(endPos.node, endPos.offset);
+
+    // 부분 요소 선택 충돌 방지: surroundContents가 실패하면 안전하게 split 적용
+    try{
+      const span = d.createElement('span');
+      span.className = 'tts-sent';
+      r.surroundContents(span);
+    }catch{
+      // fallback: 문장 텍스트만 교체
+      const frag = r.extractContents();
+      const span = d.createElement('span');
+      span.className = 'tts-sent';
+      span.appendChild(frag);
+      r.insertNode(span);
+    }
+  });
+}
+function clearTTSMarks(root){
+  root.querySelectorAll('.tts-current').forEach(el=> el.classList.remove('tts-current'));
+  // 래핑 자체는 재생 종료 시 점진적으로 풀고 싶다면 아래를 활성화
+  // root.querySelectorAll('.tts-sent').forEach(span=>{
+  //   const p = span.parentNode;
+  //   while(span.firstChild) p.insertBefore(span.firstChild, span);
+  //   p.removeChild(span);
+  // });
+}
+function allSentenceSpans(root){
+  return Array.from(root.querySelectorAll('.tts-sent'));
+}
+function scrollIntoCenter(el){
+  el.scrollIntoView({block:'center', inline:'nearest', behavior:'smooth'});
+}
+
+  
   // =============================
   // [F] 버튼 핸들러 교체
   // =============================
