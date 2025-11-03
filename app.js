@@ -1123,6 +1123,15 @@ main{
 }
 html, body { height:auto !important; overflow:auto !important; }
 main { height:auto !important; overflow:visible !important; }
+/* === Floating bubble palette === */
+#neBubble{ position:absolute; z-index:1000; }
+#neBubble .swatch{
+  width:18px;height:18px;border-radius:4px;border:1px solid #333; display:inline-block;
+}
+#neBubble .btn{ border:1px solid #333;background:#222;color:#eee;border-radius:8px;padding:2px 6px }
+#neBubble .btn:hover{ background:#2b2b2b }
+#neBubble .sep{ width:1px; height:18px; background:#333; display:inline-block; margin:0 6px; }
+
 </style>
 </head>
 <body class="context-editor">
