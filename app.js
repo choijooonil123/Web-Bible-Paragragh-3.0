@@ -470,7 +470,7 @@ function speakVerseItemInScope(item, scope, onend){
   u.onstart = ()=>{
     clearReadingHighlight(scope);
     const line = scope.querySelector(`.pline[data-verse="${item.verse}"]`);
-    if(line){ line.classList.add('reading'); line.scrollIntoView({block:'center', behavior:'smooth'}); }
+    if(line){ line.classList.add('reading'); line.scrollIntoView({block:'center', behavior:'smooth'}); }    if(line){ /* line.classList.add('reading'); */ line.scrollIntoView({block:'center', behavior:'smooth'}); }
     if (READER._wd){ clearTimeout(READER._wd); READER._wd = null; }
     const base = Math.max(800, Math.round(item.text.length * 65));
     const rate = u.rate || 1;
@@ -1454,11 +1454,11 @@ function splitToSentences(text){
     TTS.idx = i;
 
     const pane = TTS.pane();
-    if (TTS.curEl) TTS.curEl.classList.remove('speak-current');
+    if (TTS.curEl) TTS.curEl.classList.remove('speak-current'); // 유지해도 무방
     const el = pane.querySelector(`.sent[data-i="${i}"]`);
     TTS.curEl = el;
     if (el) {
-      el.classList.add('speak-current');
+      // 하이라이트 없이 중앙 스크롤만 유지
       centerScroll(el, pane);
     }
 
