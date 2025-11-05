@@ -470,7 +470,7 @@ function speakVerseItemInScope(item, scope, onend){
   u.onstart = ()=>{
     clearReadingHighlight(scope);
     const line = scope.querySelector(`.pline[data-verse="${item.verse}"]`);
-    if(line){ line.classList.add('reading'); line.scrollIntoView({block:'center', behavior:'smooth'}); }    if(line){ /* line.classList.add('reading'); */ line.scrollIntoView({block:'center', behavior:'smooth'}); }
+    if(line){ line.classList.add('reading'); line.scrollIntoView({block:'center', behavior:'smooth'}); }    
     if (READER._wd){ clearTimeout(READER._wd); READER._wd = null; }
     const base = Math.max(800, Math.round(item.text.length * 65));
     const rate = u.rate || 1;
@@ -1266,10 +1266,6 @@ function initSermonPopup(win) {
       background: #1c1f2a; color: #e6e8ef; border: 1px solid #333; border-radius: 8px;
     }
     #ttsRate { width: 160px; }
-    #readPane .speak-current{ background:transparent !important; outline:none !important; }
-    #readPane .sent{ background:transparent !important; }
-    .tts-sent, .tts-current{ background:transparent !important; outline:none !important; }
-
     `;
     const st = d.createElement('style');
     st.textContent = css;
@@ -1454,11 +1450,11 @@ function splitToSentences(text){
     TTS.idx = i;
 
     const pane = TTS.pane();
-    if (TTS.curEl) TTS.curEl.classList.remove('speak-current'); // 유지해도 무방
+    if (TTS.curEl) TTS.curEl.classList.remove('speak-current');
     const el = pane.querySelector(`.sent[data-i="${i}"]`);
     TTS.curEl = el;
     if (el) {
-      // 하이라이트 없이 중앙 스크롤만 유지
+      el.classList.add('speak-current');
       centerScroll(el, pane);
     }
 
@@ -1540,13 +1536,14 @@ function splitToSentences(text){
   }
 
 // --- 문장 하이라이트 유틸 ---
+// ✅ 안전한 문장 분리 (u/s 미사용)
 function splitToSentences(text){
-  // 한국어/영어 마침표, ? ! … 및 전각 기호 포함
-  const re = /(.+?[\.\?\!…！？。]+)(\s+|$)/gus;
+  const re = /([\s\S]+?[.?!…？！。]+)(?:\s+|$)/g;
   const out=[]; let m, last=0;
-  while((m=re.exec(text))){ out.push({t:m[1], s:m.index, e: m.index+m[1].length}); last = re.lastIndex; }
+  while((m=re.exec(text))){ out.push({t:m[1], s:m.index, e:m.index+m[1].length}); last = re.lastIndex; }
   if(last < text.length){ const tail = text.slice(last).trim(); if(tail) out.push({t:tail, s:last, e:text.length}); }
   return out;
+}
 }
 function textNodesUnder(el){
   const w = el.ownerDocument.createTreeWalker(el, NodeFilter.SHOW_TEXT, {
