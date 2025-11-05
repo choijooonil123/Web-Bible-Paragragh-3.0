@@ -1365,9 +1365,19 @@ function initSermonPopup(win) {
   }
 
 // --- 문장 하이라이트 유틸 ---
+// --- 문장 하이라이트 유틸(유니코드/도트올 지원, 불필요 이스케이프 제거) ---
 function splitToSentences(text){
-  // 한국어/영어 마침표류 포함. u 모드에서 불필요 이스케이프 제거
-  const re = /(.+?[.?!…！？。]+)(\s+|$)/gsu;
+  // 마침표/물음표/느낌표/말줄임표(영/한) 기준
+  const pattern = '(.+?[.?!…！？。]+)(\\s+|$)';
+  let re;
+  try {
+    // 최신 브라우저: s(dotAll) + u(Unicode)
+    re = new RegExp(pattern, 'gsu');
+  } catch {
+    // 일부 환경에서 u 미지원 시 폴백
+    re = new RegExp(pattern, 'gs');
+  }
+
   const out = [];
   let m, last = 0;
   while ((m = re.exec(text))) {
@@ -1380,6 +1390,7 @@ function splitToSentences(text){
   }
   return out;
 }
+
 
 
   function renderReadPane(sentences) {
