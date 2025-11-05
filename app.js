@@ -1123,6 +1123,33 @@ main{
 }
 html, body { height:auto !important; overflow:auto !important; }
 main { height:auto !important; overflow:visible !important; }
+
+/* === 문장 낭독 하이라이트용 읽기 패널 === */
+#readPane{
+  position: fixed;
+  right: 16px;
+  top: 64px;
+  bottom: 64px;
+  width: 420px;
+  overflow-y: auto;
+  background: color-mix(in hsl, var(--panel) 92%, black 4%);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px 14px;
+  box-shadow: 0 10px 28px rgba(0,0,0,.35);
+  display: none;
+}
+#readPane .sent{
+  display: block;
+  line-height: 1.8;
+  margin: 4px 0;
+  padding: 2px 6px;
+  border-radius: 8px;
+}
+#readPane .sent.reading{
+  background: #2b3242;
+  outline: 1px solid #3b4b7a;
+}
 </style>
 </head>
 <body class="context-editor">
@@ -1154,6 +1181,8 @@ main { height:auto !important; overflow:visible !important; }
 
   <div id="neSlash" class="slash hidden"></div>
   <div id="editorRoot" aria-label="Sermon Editor"></div>
+
+  <div id="readPane" aria-label="Reading Sentences"></div>
 
   <div class="notion-footer">
     <div class="notion-badge" id="neAutosave">자동저장 대기중…</div>
@@ -1558,7 +1587,7 @@ function initSermonPopup(win){
     last && last.focus();
   }
 
-  // 저장/삭제/닫기/인쇄/낭독
+  // 저장/삭제/닫기/인쇄
   d.getElementById('s').onclick = ()=>{
     const html = NblocksToHTML();
     const title = (d.getElementById('neTitle').value || d.getElementById('t').value || '').trim() || '(제목 없음)';
@@ -1570,23 +1599,140 @@ function initSermonPopup(win){
   d.getElementById('x').onclick = ()=> w.close();
   d.getElementById('print').onclick = ()=> w.print();
 
-  d.getElementById('read').onclick = ()=>{
-    const plain = toPlainText(NblocksToHTML());
-    const text = [ (d.getElementById('neTitle').value||d.getElementById('t').value||'').trim(), plain.trim() ].filter(Boolean).join('. ');
-    if(!text){ w.alert('낭독할 내용이 없습니다.'); return; }
-    const synth = w.speechSynthesis || window.speechSynthesis;
-    try{ synth.cancel(); }catch(_){}
-    const u = new w.SpeechSynthesisUtterance(text);
-    u.lang='ko-KR';
-    synth.speak(u);
-  };
-  d.getElementById('stop').onclick = ()=>{ try{ (w.speechSynthesis||window.speechSynthesis)?.cancel(); }catch(_){} };
+  /* ========= 문장 단위 낭독 + 하이라이트 + 화면 중앙 정렬 ========= */
+  const readBtn = d.getElementById('read');
+  const stopBtn = d.getElementById('stop');
+  const readPane = d.getElementById('readPane');
 
-  function toPlainText(html){
+  const TTS = {
+    sents: [],
+    idx: 0,
+    playing: false,
+    synth: w.speechSynthesis || window.speechSynthesis,
+    utter: null
+  };
+
+  function htmlToPlain(html){
     const tmp=d.createElement('div'); tmp.innerHTML=html||'';
     tmp.querySelectorAll('sup').forEach(s=> s.textContent='['+s.textContent+'] ');
-    return (tmp.textContent||'').replace(/\s+\n/g,'\n').replace(/\n{2,}/g,'\n');
+    return (tmp.textContent||'').replace(/\s+\n/g,'\n').replace(/\n{2,}/g,'\n').replace(/\s+/g,' ').trim();
   }
+
+  // 한국어/영문 종결부호 기준 문장 분할
+  function splitToSentences(text){
+    const t = String(text||'').trim();
+    if(!t) return [];
+    // 마침표, 물음표, 느낌표, 말줄임표, 한국어 종결(다.)도 일반 마침표로 처리됨
+    const parts = t.split(/(?<=[\.!\?…]|[。！？])\s+/u).filter(s=>s && s.trim().length>0);
+    return parts;
+  }
+
+  function renderReadPane(){
+    readPane.innerHTML = TTS.sents.map((s,i)=>`<span class="sent" data-i="${i}">${escapeHtml(s)}</span>`).join('');
+    readPane.style.display = '';
+  }
+
+  function clearPaneHighlight(){
+    readPane.querySelectorAll('.sent.reading').forEach(el=> el.classList.remove('reading'));
+  }
+
+  function highlightIndex(i){
+    clearPaneHighlight();
+    const span = readPane.querySelector(`.sent[data-i="${i}"]`);
+    if(span){
+      span.classList.add('reading');
+      span.scrollIntoView({block:'center', behavior:'smooth'});
+    }
+  }
+
+  function speakIdx(i){
+    if(!TTS.synth) return;
+    if(i<0 || i>=TTS.sents.length){ stopReading(); return; }
+    TTS.idx = i;
+    try{ TTS.synth.cancel(); }catch(_){}
+    const u = new w.SpeechSynthesisUtterance(TTS.sents[i]);
+    // 부모창 음성 설정을 그대로 이용하지 못하므로 기본 ko-KR로 설정
+    u.lang = 'ko-KR';
+    u.onstart = ()=>{
+      highlightIndex(i);
+    };
+    u.onend = ()=>{
+      if(!TTS.playing) return;
+      const next = i+1;
+      if(next < TTS.sents.length){
+        speakIdx(next);
+      }else{
+        stopReading();
+      }
+    };
+    u.onerror = ()=>{ // 오류 시 다음 문장으로 넘어가되 무한루프 방지
+      if(!TTS.playing) return;
+      const next = i+1;
+      if(next < TTS.sents.length) speakIdx(next); else stopReading();
+    };
+    TTS.utter = u;
+    TTS.synth.speak(u);
+  }
+
+  function startReading(){
+    const html = NblocksToHTML();
+    const title = (d.getElementById('neTitle').value || d.getElementById('t').value || '').trim();
+    const plain = [title, htmlToPlain(html)].filter(Boolean).join('. ');
+    const sents = splitToSentences(plain);
+    if(!sents.length){ w.alert('낭독할 내용이 없습니다.'); return; }
+    TTS.sents = sents;
+    TTS.idx = 0;
+    TTS.playing = true;
+    renderReadPane();
+    readBtn.textContent = '일시정지';
+    speakIdx(0);
+  }
+
+  function stopReading(){
+    TTS.playing = false;
+    try{ TTS.synth && TTS.synth.cancel(); }catch(_){}
+    clearPaneHighlight();
+    readPane.style.display = 'none';
+    readBtn.textContent = '낭독';
+  }
+
+  readBtn.onclick = ()=>{
+    if(!TTS.synth){ w.alert('이 브라우저는 음성합성을 지원하지 않습니다.'); return; }
+    if(!TTS.playing){
+      startReading();
+    }else{
+      // 일시정지 토글: 일시정지 -> 재개
+      if(TTS.synth.speaking && !TTS.synth.paused){
+        TTS.synth.pause();
+        readBtn.textContent = '재개';
+      }else if(TTS.synth.paused){
+        TTS.synth.resume();
+        readBtn.textContent = '일시정지';
+      }else{
+        startReading();
+      }
+    }
+  };
+
+  stopBtn.onclick = ()=> stopReading();
+
+  // 문장 클릭 시 해당 문장부터 재생
+  readPane.addEventListener('click', (e)=>{
+    const span = e.target.closest('.sent');
+    if(!span) return;
+    const i = +span.dataset.i;
+    if(!Number.isFinite(i)) return;
+    if(!TTS.sents.length) return;
+    TTS.playing = true;
+    readBtn.textContent = '일시정지';
+    speakIdx(i);
+  });
+
+  // 저장/삭제/닫기/낭독 끝
+  /* ========= 문장 단위 낭독 섹션 끝 ========= */
+
+  // 기존 중지 버튼 핸들러는 위에서 대체( stopReading )로 처리됨
+  // 기존 단일-문장 전체 낭독 로직은 요구사항에 맞춰 문장 단위로 치환됨
 
   // 성경 데이터 로드 유틸
   let __BOOKS_CACHE = null;
