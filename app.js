@@ -470,7 +470,7 @@ function speakVerseItemInScope(item, scope, onend){
   u.onstart = ()=>{
     clearReadingHighlight(scope);
     const line = scope.querySelector(`.pline[data-verse="${item.verse}"]`);
-    if(line){ line.classList.add('reading'); line.scrollIntoView({block:'center', behavior:'smooth'}); }    
+    if(line){ line.classList.add('reading'); line.scrollIntoView({block:'center', behavior:'smooth'}); }
     if (READER._wd){ clearTimeout(READER._wd); READER._wd = null; }
     const base = Math.max(800, Math.round(item.text.length * 65));
     const rate = u.rate || 1;
@@ -1123,15 +1123,6 @@ main{
 }
 html, body { height:auto !important; overflow:auto !important; }
 main { height:auto !important; overflow:visible !important; }
-/* === Floating bubble palette === */
-#neBubble{ position:absolute; z-index:1000; }
-#neBubble .swatch{
-  width:18px;height:18px;border-radius:4px;border:1px solid #333; display:inline-block;
-}
-#neBubble .btn{ border:1px solid #333;background:#222;color:#eee;border-radius:8px;padding:2px 6px }
-#neBubble .btn:hover{ background:#2b2b2b }
-#neBubble .sep{ width:1px; height:18px; background:#333; display:inline-block; margin:0 6px; }
-
 </style>
 </head>
 <body class="context-editor">
@@ -1233,422 +1224,133 @@ main { height:auto !important; overflow:visible !important; }
 }
 
 /* ===== 팝업 내부 스크립트 ===== */
-// =============================
-// ✅ 설교편집 팝업 초기화 전체
-// =============================
-function initSermonPopup(win) {
-  const w = win;
-  const d = w.document;
+function initSermonPopup(win){
+  const w = win, d = w.document;
+
+    // ===== 중복 제목 입력 숨기기(팝업 한정) =====
+  (function removeDuplicateTitle() {
+    const d = win.document;
+    // 현재 사용 중인 제목 입력칸
+    const mainTitle = d.getElementById('neTitle');
+    if (!mainTitle) return;
+
+    // 예전 제목 input(#t 등)이 있다면 숨김
+    const dupCandidates = [
+      ...d.querySelectorAll('input#t, input[type="text"].title-input')
+    ].filter(el => el !== mainTitle);
+
+    dupCandidates.forEach(el => {
+      el.style.display = 'none';
+      el.setAttribute('aria-hidden', 'true');
+    });
+  })();
+
+
   const $ = id => d.getElementById(id);
+  const meta = w.__WBPS_META__ || {};
 
-  // =============================
-  // [A] 읽기 전용 뷰어 및 하이라이트 스타일
-  // =============================
-  (function injectTTSStyles() {
-    const css = `
-    #readPane {
-      position: fixed; inset: 56px 8px 56px 8px;
-      background: color-mix(in hsl, var(--panel) 88%, black 4%);
-      border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px;
-      overflow: auto; z-index: 45; display: none;
-    }
-    #readPane .sent { display: inline; padding: 2px 2px; }
-    #readPane .gap { white-space: pre-wrap }
-    #readPane .speak-current {
-      background: color-mix(in srgb, var(--accent) 25%, transparent);
-      outline: 2px solid color-mix(in srgb, var(--accent) 35%, #000);
-      border-radius: 6px;
-    }
-    #ttsBar {
-      display: flex; gap: 8px; align-items: center; margin-left: 8px;
-    }
-    #ttsVoice, #ttsRate {
-      background: #1c1f2a; color: #e6e8ef; border: 1px solid #333; border-radius: 8px;
-    }
-    #ttsRate { width: 160px; }
-    `;
-    const st = d.createElement('style');
-    st.textContent = css;
-    d.head.appendChild(st);
+  $('ref').textContent  = ' — ' + (meta.ref || '');
+  $('date').textContent = meta.date ? ('최근 저장: ' + meta.date) : '';
 
-    // 읽기 패널 DOM 한 번만 생성
-    let pane = d.getElementById('readPane');
-    if (!pane) {
-      pane = d.createElement('div');
-      pane.id = 'readPane';
-      pane.setAttribute('aria-label', '낭독 뷰어');
-      d.body.appendChild(pane);
-    }
-  })();
+  $('t').value = meta.title || '';
+  $('neTitle').value = meta.title || '';
 
-  // =============================
-  // [B] 푸터에 음성/속도 컨트롤 추가
-  // =============================
-  (function ensureTTSControls() {
-    const footer = d.querySelector('footer');
-    if (!footer || d.getElementById('ttsBar')) return;
+  const N$$= sel => Array.from(d.querySelectorAll(sel));
+  const Nuid= () => Math.random().toString(36).slice(2,10);
 
-    const bar = d.createElement('div');
-    bar.id = 'ttsBar';
-    bar.innerHTML = `
-      <label class="muted" for="ttsVoice">음성</label>
-      <select id="ttsVoice"></select>
-      <label class="muted" for="ttsRate">속도</label>
-      <input id="ttsRate" type="range" min="0.6" max="1.8" step="0.05" value="0.95">
-    `;
-    const saveBtn = d.getElementById('s');
-    footer.insertBefore(bar, saveBtn || footer.lastChild);
-  })();
+  const neRoot    = $('editorRoot');
+  const neBubble  = $('neBubble');
+  const neSlash   = $('neSlash');
+  const neAutosave= $('neAutosave');
 
-  // =============================
-  // [C] 보이스 목록 로딩 및 저장
-  // =============================
-  const POPUP_TTS_KEY = 'wbps.popup.tts';
-  function loadSavedTTS() {
-    try {
-      return JSON.parse(w.localStorage.getItem(POPUP_TTS_KEY) || '{}');
-    } catch {
-      return {};
+  const NSTATE = { blocks: [], history: [], cursor: -1, docId: null };
+
+  function NwrapToggle(inner){
+    const parts = String(inner||'').split(/<br\s*\/?>/);
+    const first = parts.shift() || '토글 제목';
+    const body  = parts.join('<br>');
+    return '<details open><summary>'+first+'</summary><div>'+body+'</div></details>';
+  }
+  function Nescape(s){ const t=d.createElement('div'); t.textContent=String(s); return t.innerHTML; }
+  function NindexById(id){ return NSTATE.blocks.findIndex(b=>b.id===id); }
+  function NgetType(block){ return block?.dataset?.type || 'p'; }
+
+  function initBlocksFromHTML(html){
+    if(!html || /^\s*$/.test(html)){
+      NSTATE.blocks=[{id:Nuid(), type:'p', html:'여기에 설교를 작성하세요.'}];
+    }else{
+      NSTATE.blocks=[{id:Nuid(), type:'p', html: html}];
     }
   }
-  function saveTTS(v) {
-    try {
-      w.localStorage.setItem(POPUP_TTS_KEY, JSON.stringify(v || {}));
-    } catch {}
-  }
 
-  async function populateVoices() {
-    const sel = d.getElementById('ttsVoice');
-    if (!sel) return;
-
-    function fill(list) {
-      sel.innerHTML = '';
-      const kos = list.filter(v => (v.lang || '').toLowerCase().startsWith('ko'));
-      const etc = list.filter(v => !(v.lang || '').toLowerCase().startsWith('ko'));
-      const groups = [
-        { label: '한국어', arr: kos },
-        { label: '기타', arr: etc }
-      ];
-      for (const g of groups) {
-        if (!g.arr.length) continue;
-        const og = d.createElement('optgroup');
-        og.label = g.label;
-        g.arr.forEach(v => {
-          const o = d.createElement('option');
-          o.value = v.voiceURI;
-          o.textContent = `${v.name} — ${v.lang}${v.localService ? ' (로컬)' : ''}`;
-          og.appendChild(o);
-        });
-        sel.appendChild(og);
-      }
-      const saved = loadSavedTTS();
-      if (saved.voiceURI) {
-        const i = [...sel.options].findIndex(o => o.value === saved.voiceURI);
-        if (i >= 0) sel.selectedIndex = i;
-      }
-      if (saved.rate)
-        d.getElementById('ttsRate').value = String(saved.rate);
+  function Nrender(){
+    neRoot.innerHTML = '';
+    for(const b of NSTATE.blocks){
+      const el = d.createElement('div');
+      el.className = 'editor-block';
+      el.dataset.id = b.id; el.dataset.type = b.type;
+      el.innerHTML = `
+        <div class="handle">⋮⋮</div>
+        <div class="content" contenteditable="true">${b.type==='toggle'? NwrapToggle(b.html) : b.html}</div>
+        <div class="progress" style="width:0"></div>
+      `;
+      neRoot.appendChild(el);
     }
-
-    const have = w.speechSynthesis.getVoices?.();
-    if (have && have.length) fill(have);
-    w.speechSynthesis.onvoiceschanged = () =>
-      fill(w.speechSynthesis.getVoices() || []);
-  }
-  populateVoices();
-
-  // =============================
-  // [D] 문장 분해 / 렌더 유틸
-  // =============================
-  function blocksToPlainHTML() {
-    return NblocksToHTML();
+    NbindBlockEvents();
   }
 
-// --- 문장 하이라이트 유틸 ---
-// === 문장 분해(안전 버전: s/u 미사용, 모든 환경 OK) ===
-// 코어: 오프셋 포함(하이라이트용)
-function splitToSentencesCore(text){
-  // 마침표/물음표/느낌표/말줄임표(영/한) 기준. dotAll 대신 [\s\S] 사용.
-  const re = /([\s\S]+?[.?!…！？。]+)(?:\s+|$)/g;
-  const out = [];
-  let m, last = 0;
-  while ((m = re.exec(text))) {
-    out.push({ t: m[1], s: m.index, e: m.index + m[1].length });
-    last = re.lastIndex;
-  }
-  if (last < text.length) {
-    const tail = text.slice(last).trim();
-    if (tail) out.push({ t: tail, s: last, e: text.length });
-  }
-  return out;
-}
-
-// 읽기 패널용: 문자열 배열
-function splitToSentencesArray(text){
-  return splitToSentencesCore(text).map(o => o.t);
-}
-
-// (호환용) 예전 이름을 호출하는 곳이 있다면 배열 버전으로 반환
-function splitToSentences(text){
-  return splitToSentencesArray(text);
-}
-
-
-  function renderReadPane(sentences) {
-    const pane = d.getElementById('readPane');
-    pane.innerHTML = '';
-    sentences.forEach((s, i) => {
-      const span = d.createElement('span');
-      span.className = 'sent';
-      span.dataset.i = i;
-      span.textContent =
-        s + (/[\.!?…？！。]$/.test(s) ? ' ' : '. ');
-      pane.appendChild(span);
-      const gap = d.createElement('span');
-      gap.className = 'gap';
-      gap.textContent = ' ';
-      pane.appendChild(gap);
-    });
-    pane.scrollTop = 0;
-    pane.style.display = 'block';
+  function NsaveBlockHTML(block){
+    const i = NindexById(block.dataset.id);
+    if(i<0) return;
+    const content = block.querySelector('.content');
+    NSTATE.blocks[i].html = content.innerHTML;
   }
 
-  function centerScroll(el, container) {
-    const cr = container.getBoundingClientRect();
-    const er = el.getBoundingClientRect();
-    const offset = (er.top + er.height / 2) - (cr.top + cr.height / 2);
-    container.scrollTop += offset;
+  function NsplitBlock(block){
+    const i = NindexById(block.dataset.id); if(i<0) return;
+    const sel = w.getSelection(); if(!sel.rangeCount) return;
+    const range = sel.getRangeAt(0);
+    const text = block.querySelector('.content').textContent || '';
+    const off  = range.startOffset;
+    const pre  = text.slice(0, off);
+    const post = text.slice(off);
+    NSTATE.blocks[i].html = Nescape(pre);
+    NSTATE.blocks.splice(i+1,0,{id:Nuid(), type:'p', html: Nescape(post||'')});
+    Nrender();
+    const next = neRoot.querySelector(`.editor-block[data-id="${NSTATE.blocks[i+1].id}"] .content`);
+    if(next) { next.focus(); const rr=d.createRange(); rr.selectNodeContents(next); rr.collapse(false); const ss=w.getSelection(); ss.removeAllRanges(); ss.addRange(rr); }
+    NpushHistory();
   }
 
-  // =============================
-  // [E] TTS 엔진 상태 및 실행
-  // =============================
-  const TTS = {
-    synth: w.speechSynthesis || window.speechSynthesis,
-    playing: false,
-    idx: 0,
-    sents: [],
-    u: null,
-    pane: () => d.getElementById('readPane'),
-    curEl: null
-  };
+  function NbindBlockEvents(){
+    N$$('.editor-block').forEach(block =>{
+      const content = block.querySelector('.content');
 
-  function currentVoice() {
-    const uri = d.getElementById('ttsVoice')?.value || '';
-    const list = TTS.synth?.getVoices?.() || [];
-    return list.find(v => v.voiceURI === uri) || null;
-  }
-  function currentRate() {
-    return parseFloat(d.getElementById('ttsRate')?.value || '1.0') || 1;
-  }
+      content.addEventListener('keydown', e=>{
+        if(e.key==='/' && !e.shiftKey){ NshowSlash(block); return; }
+        if(e.key==='Enter'){
+          if(NgetType(block)==='code') return;
+          e.preventDefault(); NsplitBlock(block);
+        }
+        if((e.metaKey||e.ctrlKey)&&!e.shiftKey&&e.key.toLowerCase()==='z'){ e.preventDefault(); Nundo(); }
+        if(((e.metaKey||e.ctrlKey)&&e.shiftKey&&e.key.toLowerCase()==='z')||((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='y')){ e.preventDefault(); Nredo(); }
+      });
 
-  function speakIdx(i) {
-    if (i < 0 || i >= TTS.sents.length) {
-      stopReading();
-      return;
-    }
-    TTS.idx = i;
-
-    const pane = TTS.pane();
-    if (TTS.curEl) TTS.curEl.classList.remove('speak-current');
-    const el = pane.querySelector(`.sent[data-i="${i}"]`);
-    TTS.curEl = el;
-    if (el) {
-      el.classList.add('speak-current');
-      centerScroll(el, pane);
-    }
-
-    try {
-      TTS.synth.cancel();
-    } catch (_) {}
-    const u = new w.SpeechSynthesisUtterance(TTS.sents[i]);
-    const v = currentVoice();
-    if (v) {
-      u.voice = v;
-      u.lang = v.lang;
-    } else {
-      u.lang = 'ko-KR';
-    }
-    u.rate = currentRate();
-    u.onend = () => {
-      if (TTS.playing) speakIdx(i + 1);
-    };
-    u.onerror = () => {
-      if (TTS.playing) speakIdx(i + 1);
-    };
-    TTS.u = u;
-    TTS.synth.speak(u);
-  }
-
-  function startReading() {
-    const html = blocksToPlainHTML();
-    const sents = splitToSentencesArray(html);
-    if (!sents.length) {
-      w.alert('낭독할 내용이 없습니다.');
-      return;
-    }
-
-    saveTTS({
-      voiceURI: d.getElementById('ttsVoice')?.value || '',
-      rate: currentRate()
+      content.addEventListener('input', ()=>{ NsaveBlockHTML(block); NscheduleAutosave(); });
+      content.addEventListener('mouseup', NshowBubbleMaybe);
+      content.addEventListener('keyup',   NshowBubbleMaybe);
     });
 
-    renderReadPane(sents);
-    TTS.sents = sents;
-    TTS.playing = true;
-    d.getElementById('read').textContent = '일시정지';
-    speakIdx(0);
+    N$$('.editor-block .handle').forEach(h=>{
+      h.addEventListener('click',()=>{
+        const block = h.closest('.editor-block');
+        const idx = NindexById(block.dataset.id);
+        if(idx<=0) return;
+        const t = NSTATE.blocks[idx]; NSTATE.blocks[idx]=NSTATE.blocks[idx-1]; NSTATE.blocks[idx-1]=t;
+        Nrender(); NscheduleAutosave();
+      });
+    });
   }
-
-  function pauseReading() {
-    try {
-      TTS.synth.pause();
-    } catch (_) {}
-    TTS.playing = false;
-    d.getElementById('read').textContent = '재개';
-  }
-
-  function resumeReading() {
-    try {
-      TTS.synth.resume();
-    } catch (_) {}
-    TTS.playing = true;
-    d.getElementById('read').textContent = '일시정지';
-  }
-
-  function stopReading() {
-    try {
-      TTS.synth.cancel();
-    } catch (_) {}
-    TTS.playing = false;
-    TTS.idx = 0;
-    TTS.u = null;
-    const pane = TTS.pane();
-    if (pane) {
-      pane.style.display = 'none';
-      pane.innerHTML = '';
-    }
-    if (TTS.curEl) {
-      TTS.curEl.classList.remove('speak-current');
-      TTS.curEl = null;
-    }
-    d.getElementById('read').textContent = '낭독';
-  }
-
-// --- 문장 하이라이트 유틸 ---
-// ✅ 안전한 문장 분리 (u/s 미사용)
-function splitToSentences(text){
-  const re = /([\s\S]+?[.?!…？！。]+)(?:\s+|$)/g;
-  const out=[]; let m, last=0;
-  while((m=re.exec(text))){ out.push({t:m[1], s:m.index, e:m.index+m[1].length}); last = re.lastIndex; }
-  if(last < text.length){ const tail = text.slice(last).trim(); if(tail) out.push({t:tail, s:last, e:text.length}); }
-  return out;
-}
-}
-function textNodesUnder(el){
-  const w = el.ownerDocument.createTreeWalker(el, NodeFilter.SHOW_TEXT, {
-    acceptNode(n){ return n.nodeValue.trim() ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT; }
-  });
-  const arr=[]; while(w.nextNode()) arr.push(w.currentNode); return arr;
-}
-function wrapSentencesOnce(root){
-  // 이미 래핑돼 있으면 스킵
-  if(root.querySelector('.tts-sent')) return;
-
-  const nodes = textNodesUnder(root);
-  // 텍스트 전체 인덱스 매핑
-  let offset = 0;
-  const indexMap = nodes.map(n => { const len = n.nodeValue.length; const obj = {node:n, start:offset, end:offset+len}; offset += len; return obj; });
-
-  const full = nodes.map(n=>n.nodeValue).join('');
-  const sents = splitToSentencesCore(full);
-  if(!sents.length) return;
-
-  // 문장별로 Range를 만들어 <span class="tts-sent">로 감싼다
-  const d = root.ownerDocument;
-  sents.forEach(sn=>{
-    // 범위를 구성
-    let startPos=null, endPos=null;
-    for(const m of indexMap){
-      if(startPos===null && sn.s < m.end){
-        startPos = { node:m.node, offset: Math.max(0, sn.s - m.start) };
-      }
-      if(sn.e <= m.end){
-        endPos = { node:m.node, offset: Math.max(0, sn.e - m.start) };
-        break;
-      }
-    }
-    if(!startPos || !endPos) return;
-    const r = d.createRange();
-    r.setStart(startPos.node, startPos.offset);
-    r.setEnd(endPos.node, endPos.offset);
-
-    // 부분 요소 선택 충돌 방지: surroundContents가 실패하면 안전하게 split 적용
-    try{
-      const span = d.createElement('span');
-      span.className = 'tts-sent';
-      r.surroundContents(span);
-    }catch{
-      // fallback: 문장 텍스트만 교체
-      const frag = r.extractContents();
-      const span = d.createElement('span');
-      span.className = 'tts-sent';
-      span.appendChild(frag);
-      r.insertNode(span);
-    }
-  });
-}
-function clearTTSMarks(root){
-  root.querySelectorAll('.tts-current').forEach(el=> el.classList.remove('tts-current'));
-  // 래핑 자체는 재생 종료 시 점진적으로 풀고 싶다면 아래를 활성화
-  // root.querySelectorAll('.tts-sent').forEach(span=>{
-  //   const p = span.parentNode;
-  //   while(span.firstChild) p.insertBefore(span.firstChild, span);
-  //   p.removeChild(span);
-  // });
-}
-function allSentenceSpans(root){
-  return Array.from(root.querySelectorAll('.tts-sent'));
-}
-function scrollIntoCenter(el){
-  el.scrollIntoView({block:'center', inline:'nearest', behavior:'smooth'});
-}
-
-  
-  // =============================
-  // [F] 버튼 핸들러 교체
-  // =============================
-  const btnRead = d.getElementById('read');
-  const btnStop = d.getElementById('stop');
-  if (btnRead) {
-    btnRead.onclick = () => {
-      if (!TTS.playing && TTS.synth?.paused) {
-        resumeReading();
-        return;
-      }
-      if (TTS.playing) {
-        pauseReading();
-        return;
-      }
-      startReading();
-    };
-  }
-  if (btnStop) btnStop.onclick = () => stopReading();
-
-  // 설정 변경 시 저장
-  d.getElementById('ttsRate')?.addEventListener('input', () =>
-    saveTTS({
-      voiceURI: d.getElementById('ttsVoice')?.value || '',
-      rate: currentRate()
-    })
-  );
-  d.getElementById('ttsVoice')?.addEventListener('change', () =>
-    saveTTS({
-      voiceURI: d.getElementById('ttsVoice')?.value || '',
-      rate: currentRate()
-    })
-  );
-}
 
   function NshowBubbleMaybe(){
     const sel = w.getSelection();
@@ -1868,31 +1570,17 @@ function scrollIntoCenter(el){
   d.getElementById('x').onclick = ()=> w.close();
   d.getElementById('print').onclick = ()=> w.print();
 
-// --- [F] 버튼 핸들러 교체: 읽기/중지 ---
-d.getElementById('read').onclick = ()=>{
-  if(!TTS.playing && TTS.synth?.paused){
-    // 일시정지 → 재개
-    resumeReading();
-    return;
-  }
-  if(TTS.playing){
-    // 일시정지
-    pauseReading();
-    return;
-  }
-  // 새로 시작
-  startReading();
-};
-
-d.getElementById('stop').onclick = ()=> stopReading();
-
-// 속도/보이스 변경 중에 재생 중이면 즉시 반영(다음 문장부터)
-d.getElementById('ttsRate')?.addEventListener('input', ()=>{
-  saveTTS({ voiceURI:(d.getElementById('ttsVoice')?.value)||'', rate: currentRate() });
-});
-d.getElementById('ttsVoice')?.addEventListener('change', ()=>{
-  saveTTS({ voiceURI:(d.getElementById('ttsVoice')?.value)||'', rate: currentRate() });
-});
+  d.getElementById('read').onclick = ()=>{
+    const plain = toPlainText(NblocksToHTML());
+    const text = [ (d.getElementById('neTitle').value||d.getElementById('t').value||'').trim(), plain.trim() ].filter(Boolean).join('. ');
+    if(!text){ w.alert('낭독할 내용이 없습니다.'); return; }
+    const synth = w.speechSynthesis || window.speechSynthesis;
+    try{ synth.cancel(); }catch(_){}
+    const u = new w.SpeechSynthesisUtterance(text);
+    u.lang='ko-KR';
+    synth.speak(u);
+  };
+  d.getElementById('stop').onclick = ()=>{ try{ (w.speechSynthesis||window.speechSynthesis)?.cancel(); }catch(_){} };
 
   function toPlainText(html){
     const tmp=d.createElement('div'); tmp.innerHTML=html||'';
