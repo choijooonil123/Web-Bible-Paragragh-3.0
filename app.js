@@ -1365,11 +1365,10 @@ function initSermonPopup(win) {
   }
 
 // --- 문장 하이라이트 유틸 ---
-// --- 문장 하이라이트 유틸(유니코드/도트올 지원, 불필요 이스케이프 제거) ---
-// --- 문장 분해 유틸(플래그 s/u 미사용, 모든 환경 안전) ---
-function splitToSentences(text){
-  // 마침표/물음표/느낌표/말줄임표(영/한) 기준으로 문장 자르기
-  // [\s\S] = 개행 포함 모든 문자, s(dotAll) 없이 동일 효과
+// === 문장 분해(안전 버전: s/u 미사용, 모든 환경 OK) ===
+// 코어: 오프셋 포함(하이라이트용)
+function splitToSentencesCore(text){
+  // 마침표/물음표/느낌표/말줄임표(영/한) 기준. dotAll 대신 [\s\S] 사용.
   const re = /([\s\S]+?[.?!…！？。]+)(?:\s+|$)/g;
   const out = [];
   let m, last = 0;
@@ -1384,7 +1383,15 @@ function splitToSentences(text){
   return out;
 }
 
+// 읽기 패널용: 문자열 배열
+function splitToSentencesArray(text){
+  return splitToSentencesCore(text).map(o => o.t);
+}
 
+// (호환용) 예전 이름을 호출하는 곳이 있다면 배열 버전으로 반환
+function splitToSentences(text){
+  return splitToSentencesArray(text);
+}
 
 
   function renderReadPane(sentences) {
@@ -1475,7 +1482,7 @@ function splitToSentences(text){
 
   function startReading() {
     const html = blocksToPlainHTML();
-    const sents = splitToSentences(html);
+    const sents = splitToSentencesArray(html);
     if (!sents.length) {
       w.alert('낭독할 내용이 없습니다.');
       return;
@@ -1553,7 +1560,7 @@ function wrapSentencesOnce(root){
   const indexMap = nodes.map(n => { const len = n.nodeValue.length; const obj = {node:n, start:offset, end:offset+len}; offset += len; return obj; });
 
   const full = nodes.map(n=>n.nodeValue).join('');
-  const sents = splitToSentences(full);
+  const sents = splitToSentencesCore(full);
   if(!sents.length) return;
 
   // 문장별로 Range를 만들어 <span class="tts-sent">로 감싼다
