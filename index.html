@@ -3,10 +3,6 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <!-- index.html의 <head> 안 어디든 추가 -->
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg'/>">
-  <link rel="icon" href="data:,">
-
   <title>Web Bible Paragraph Sermon</title>
   <style>
     :root{
@@ -186,12 +182,6 @@
     
     /* 응급: 설교 버튼 가시성 강제 */
     .ptoolbar .sermBtn { display:inline-flex !important; visibility:visible !important; opacity:1 !important; }
-    /* 🔹설교편집 팝업에서만 위쪽 제목칸(#t) 숨김 */
-    input#t {
-      display: none !important;
-    }
-    .tts-current{ background:rgba(255,230,0,.35); box-shadow: inset 0 -2px 0 rgba(255,200,0,.8) }
-    details.para .pline.reading { background: transparent !important; outline: none !important; }
 
   </style>
 
