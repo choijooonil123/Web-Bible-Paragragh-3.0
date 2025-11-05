@@ -1266,6 +1266,10 @@ function initSermonPopup(win) {
       background: #1c1f2a; color: #e6e8ef; border: 1px solid #333; border-radius: 8px;
     }
     #ttsRate { width: 160px; }
+    #readPane .speak-current{ background:transparent !important; outline:none !important; }
+    #readPane .sent{ background:transparent !important; }
+    .tts-sent, .tts-current{ background:transparent !important; outline:none !important; }
+
     `;
     const st = d.createElement('style');
     st.textContent = css;
