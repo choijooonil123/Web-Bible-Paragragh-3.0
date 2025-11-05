@@ -1364,30 +1364,23 @@ function initSermonPopup(win) {
     return NblocksToHTML();
   }
 
-  function splitToSentences(raw) {
-    const tmp = d.createElement('div');
-    tmp.innerHTML = raw;
-    tmp.querySelectorAll('sup').forEach(s => (s.textContent = '[' + s.textContent + '] '));
-    let text = tmp.textContent || '';
-    text = text.replace(/\r\n/g, '\n');
-    const parts = text
-      .split(/(?<=[\.!?…？！。])\s+|(?:\n{2,})/g)
-      .map(s => s.trim())
-      .filter(Boolean);
-
-    const out = [];
-    for (const p of parts) {
-      if (p.length > 300) {
-        p.split(/\n+/).forEach(x => {
-          const t = x.trim();
-          if (t) out.push(t);
-        });
-      } else {
-        out.push(p);
-      }
-    }
-    return out;
+// --- 문장 하이라이트 유틸 ---
+function splitToSentences(text){
+  // 한국어/영어 마침표류 포함. u 모드에서 불필요 이스케이프 제거
+  const re = /(.+?[.?!…！？。]+)(\s+|$)/gsu;
+  const out = [];
+  let m, last = 0;
+  while ((m = re.exec(text))) {
+    out.push({ t: m[1], s: m.index, e: m.index + m[1].length });
+    last = re.lastIndex;
   }
+  if (last < text.length) {
+    const tail = text.slice(last).trim();
+    if (tail) out.push({ t: tail, s: last, e: text.length });
+  }
+  return out;
+}
+
 
   function renderReadPane(sentences) {
     const pane = d.getElementById('readPane');
