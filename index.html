@@ -266,15 +266,15 @@
     </div>
   </div>
 
-    <!-- 🔹 플로팅 툴바 -->
-  <div id="floatbar" hidden role="toolbar" aria-label="Text formatting">
-    <button type="button" data-cmd="bold" title="굵게 (Ctrl+B)"><b>B</b></button>
-    <button type="button" data-cmd="italic" title="기울임 (Ctrl+I)"><i>I</i></button>
-    <button type="button" data-cmd="underline" title="밑줄 (Ctrl+U)"><u>U</u></button>
-    <div class="divider"></div>
-    <input id="colorPicker" type="color" title="글자색" />
-    <button type="button" id="clearColor" title="색 제거">⨯</button>
-  </div>
+<!-- 플로팅 서식툴바: 절(.verse) 선택 시에만 표시 -->
+<div id="vbar" hidden role="toolbar" aria-label="Verse formatting">
+  <button type="button" data-cmd="bold" title="굵게 (Ctrl+B)"><b>B</b></button>
+  <button type="button" data-cmd="italic" title="기울임 (Ctrl+I)"><i>I</i></button>
+  <button type="button" data-cmd="underline" title="밑줄 (Ctrl+U)"><u>U</u></button>
+  <div class="divider"></div>
+  <input id="vcolor" type="color" title="글자색" />
+  <button type="button" data-act="clearColor" title="색 제거">⨯</button>
+</div>
 
   <script src="app.js" defer></script>
 </body>
