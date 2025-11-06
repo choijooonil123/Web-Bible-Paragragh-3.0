@@ -202,8 +202,31 @@
       width:28px; height:28px; padding:0; border:1px solid var(--border);
       background:#1f2533; border-radius:6px; cursor:pointer;
     }
-
-  </style>
+    /* === 절문장 서식 툴바 === */
+    #wbp-plbar{
+      position: fixed; left:0; top:0;
+      transform: translate(-50%, calc(-100% - 10px));
+      background:#0f1320; border:1px solid var(--border, #252a36);
+      border-radius:10px; padding:6px;
+      display:flex; gap:6px; align-items:center;
+      box-shadow:0 8px 20px rgba(0,0,0,.35); z-index:9999;
+    }
+    #wbp-plbar[hidden]{ display:none; }
+    #wbp-plbar .divider{ width:1px; height:20px; background:var(--border, #252a36); }
+    #wbp-plbar button{
+      border:1px solid var(--border, #252a36); background:#1f2533; color:#e6e8ef;
+      padding:6px 8px; border-radius:8px; cursor:pointer; font-weight:700;
+    }
+    #wbp-plbar button:hover{ background:#273046; }
+    #wbp-plbar input[type="color"]{
+      width:28px; height:28px; padding:0; border:1px solid var(--border, #252a36);
+      background:#1f2533; border-radius:6px; cursor:pointer;
+    }
+    /* 편집 모드 표시 */
+    details.para .pcontent[contenteditable="true"]{
+      outline: 1px dashed #3b4b7a; outline-offset: 2px;
+    }
+</style>
 
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600&family=Nanum+Myeongjo&display=swap" rel="stylesheet">
 </head>
@@ -287,6 +310,120 @@
   </div>
 
   <script src="app.js" defer></script>
+
+  <script>
+/* === Paragraph .pline Floating Toolbar (Bold/Italic/Underline/Color) === */
+  (function enablePlinetBar(){
+    const bar = document.getElementById('wbp-plbar');
+    const colorInp = document.getElementById('wbp-plcolor');
+    const docEl = document.body;
+    if(!bar || !docEl) return;
+  
+    let savedRange = null;
+  
+    function selInPline(){
+      const sel = window.getSelection();
+      if(!sel || sel.rangeCount===0) return false;
+      const c = sel.getRangeAt(0).commonAncestorContainer;
+      const el = (c.nodeType===1 ? c : c.parentElement);
+      const line = el?.closest?.('.pline');
+      if(!(line && document.body.contains(line))) return false;
+      const scope = line.closest('.pcontent');
+      if(scope && scope.getAttribute('contenteditable')!=='true'){
+        scope.setAttribute('contenteditable','true');
+      }
+      return true;
+    }
+    function saveSel(){
+      const sel = window.getSelection();
+      if(sel && sel.rangeCount>0) savedRange = sel.getRangeAt(0).cloneRange();
+    }
+    function restoreSel(){
+      if(!savedRange) return false;
+      const sel = window.getSelection();
+      sel.removeAllRanges(); sel.addRange(savedRange);
+      return true;
+    }
+    function selRect(){
+      const sel = window.getSelection();
+      if(!sel || sel.rangeCount===0) return null;
+      const r = sel.getRangeAt(0).cloneRange();
+      let rect = r.getBoundingClientRect();
+      if(!rect || (rect.width===0 && rect.height===0)){
+        const span = document.createElement('span');
+        span.appendChild(document.createTextNode('\u200b'));
+        r.insertNode(span);
+        rect = span.getBoundingClientRect();
+        span.remove();
+      }
+      return rect;
+    }
+    function showBar(){
+      const sel = window.getSelection();
+      if(!sel || sel.isCollapsed || !selInPline()){ hide(); return; }
+      const rect = selRect(); if(!rect){ hide(); return; }
+      bar.style.left = (rect.left + rect.width/2) + 'px';
+      bar.style.top  = rect.top + 'px';
+      bar.hidden = false;
+      saveSel();
+    }
+    function hide(){ bar.hidden = true; }
+  
+    bar.addEventListener('mousedown', e=> e.preventDefault());
+    bar.addEventListener('click', e=>{
+      const btn = e.target.closest('button'); if(!btn) return;
+      if(!restoreSel()) return;
+  
+      const cmd = btn.dataset.cmd;
+      const act = btn.dataset.act;
+      if(cmd){
+        document.execCommand(cmd,false,null);
+        saveSel(); showBar();
+        return;
+      }
+      if(act==='clearColor'){
+        try{
+          const sel = window.getSelection(); if(!sel || sel.rangeCount===0) return;
+          const range = sel.getRangeAt(0);
+          const frag  = range.cloneContents();
+          const div   = document.createElement('div'); div.appendChild(frag);
+          div.querySelectorAll('span, font').forEach(n=>{
+            if(n.style?.color) n.style.color = '';
+            if(n.hasAttribute?.('color')) n.removeAttribute('color');
+            if(n.getAttribute?.('style')==='') n.removeAttribute('style');
+          });
+          range.deleteContents();
+          document.execCommand('insertHTML', false, div.innerHTML || div.textContent || '');
+        }catch(_){}
+        saveSel(); showBar();
+      }
+    });
+    colorInp?.addEventListener('input', ()=>{
+      if(!restoreSel()) return;
+      document.execCommand('foreColor', false, colorInp.value);
+      saveSel(); showBar();
+    });
+  
+    document.addEventListener('selectionchange', ()=>{
+      if(selInPline()) showBar(); else hide();
+    });
+    document.addEventListener('mouseup', ()=> setTimeout(showBar, 0));
+    document.addEventListener('keyup',   ()=> setTimeout(showBar, 0));
+    window.addEventListener('scroll', hide, {passive:true});
+    window.addEventListener('resize', hide);
+  
+    window.addEventListener('keydown', (e)=>{
+      if(!(e.ctrlKey||e.metaKey)) return;
+      const k=e.key.toLowerCase();
+      if(!['b','i','u'].includes(k)) return;
+      if(!selInPline()) return;
+      e.preventDefault();
+      document.execCommand(k==='b'?'bold':k==='i'?'italic':'underline', false, null);
+      setTimeout(showBar, 0);
+    });
+  })();
+  </script>
+
   <!-- 플로팅 서식툴바: 절(.verse) 선택 시에만 표시 -->
   <div id="vbar" hidden role="toolbar" aria-label="Verse formatting">
     <button type="button" data-cmd="bold" title="굵게 (Ctrl+B)"><b>B</b></button>
