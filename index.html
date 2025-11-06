@@ -477,5 +477,145 @@
 
   <script src="app.js" defer></script>
 
+  <script>
+    /* ========= [WBP v3 Filled-State Patch] =========
+       - 각 단락 툴바의 버튼(내용흐름/단위/전체/주석/설교)에
+         해당 데이터가 존재하면 .filled 클래스를 추가해 색상 변경
+       - 기존 코드 삭제/수정 없이 하단에 붙여 쓰는 안정형 패치
+    ================================================= */
+    
+    /** 안전 접근 유틸 */
+    function WBP_safe(fn, fallback){ try{ return fn(); }catch(_){ return fallback; } }
+    
+    /** paraId 계산: `${book}|${chap}|${ref}` */
+    function WBP_paraId(book, chap, paraIdx){
+      const para = WBP_safe(()=>BIBLE.books[book][chap].paras[paraIdx], null);
+      if(!para) return null;
+      return `${book}|${chap}|${para.ref}`;
+    }
+    
+    /** 단락 엘리먼트에서 book/chap/idx 파싱 */
+    function WBP_pickMetaFromParaEl(paraEl){
+      const t = paraEl.querySelector('summary .ptitle');
+      if(!t) return null;
+      const book = t.dataset.book;
+      const chap = parseInt(t.dataset.ch, 10);
+      const idx  = parseInt(t.dataset.idx, 10);
+      if(!book || !Number.isFinite(chap) || !Number.isFinite(idx)) return null;
+      return {book, chap, idx};
+    }
+    
+    /** 저장된 문서/설교 유무 확인 */
+    function WBP_hasDoc(map, pid){
+      const doc = (map||{})[pid];
+      if(!doc) return false;
+      const body = (doc.body || '').replace(/\s+/g,'').trim();
+      const title= (doc.title||'').replace(/\s+/g,'').trim();
+      return !!(body || title);
+    }
+    function WBP_hasSermon(sermonMap, pid){
+      const arr = (sermonMap||{})[pid] || [];
+      return Array.isArray(arr) && arr.length > 0 && arr.some(it=>{
+        const title=(it.title||'').replace(/\s+/g,'').trim();
+        const body =(it.body ||'').replace(/\s+/g,'').trim();
+        return !!(title || body);
+      });
+    }
+    
+    /** 단락 하나에 대해 버튼 상태 적용 */
+    function WBP_applyFilledToParaEl(paraEl){
+      const meta = WBP_pickMetaFromParaEl(paraEl);
+      if(!meta) return;
+    
+      const pid = WBP_paraId(meta.book, meta.chap, meta.idx);
+      if(!pid) return;
+    
+      // 저장 맵 읽기
+      const sermonMap = WBP_safe(()=>JSON.parse(localStorage.getItem(STORAGE_SERMON)||'{}'), {});
+      const unitMap   = WBP_safe(()=>JSON.parse(localStorage.getItem(STORAGE_UNIT_CTX)||'{}'), {});
+      const wholeMap  = WBP_safe(()=>JSON.parse(localStorage.getItem(STORAGE_WHOLE_CTX)||'{}'), {});
+      const commMap   = WBP_safe(()=>JSON.parse(localStorage.getItem(STORAGE_COMMENTARY)||'{}'), {});
+      const sumMap    = WBP_safe(()=>JSON.parse(localStorage.getItem(STORAGE_SUMMARY)||'{}'), {});
+    
+      // 상태
+      const hasSummary    = WBP_hasDoc(sumMap,  pid);
+      const hasUnit       = WBP_hasDoc(unitMap, pid);
+      const hasWhole      = WBP_hasDoc(wholeMap,pid);
+      const hasCommentary = WBP_hasDoc(commMap, pid);
+      const hasSermon     = WBP_hasSermon(sermonMap, pid);
+    
+      // 버튼에 .filled 토글
+      const tb = paraEl.querySelector('.ptoolbar');
+      if(!tb) return;
+    
+      const btnSummary    = tb.querySelector('.btnSummary');
+      const btnUnitCtx    = tb.querySelector('.btnUnitCtx');
+      const btnWholeCtx   = tb.querySelector('.btnWholeCtx');
+      const btnCommentary = tb.querySelector('.btnCommentary');
+      const btnSermon     = tb.querySelector('.sermBtn');
+    
+      if(btnSummary)    btnSummary.classList.toggle('filled',    !!hasSummary);
+      if(btnUnitCtx)    btnUnitCtx.classList.toggle('filled',    !!hasUnit);
+      if(btnWholeCtx)   btnWholeCtx.classList.toggle('filled',   !!hasWhole);
+      if(btnCommentary) btnCommentary.classList.toggle('filled', !!hasCommentary);
+      if(btnSermon)     btnSermon.classList.toggle('filled',     !!hasSermon);
+    }
+    
+    /** 화면 전체 스윕 */
+    function WBP_sweepAll(){
+      document.querySelectorAll('#tree details.para').forEach(WBP_applyFilledToParaEl);
+    }
+    
+    /** buildTree 이후/토글 시 반영: MutationObserver */
+    (function(){
+      const root = document.getElementById('tree');
+      if(!root) return;
+      // 최초 한 번
+      setTimeout(WBP_sweepAll, 200);
+    
+      // 구조 변동 시 자동 반영
+      const mo = new MutationObserver(()=> WBP_sweepAll());
+      mo.observe(root, {subtree:true, childList:true});
+    })();
+    
+    /** 저장 함수 래핑: setSermonMap / setDocMap 호출 후 상태 갱신 */
+    (function wrapSavers(){
+      const _setSermonMap = window.setSermonMap;
+      const _setDocMap    = window.setDocMap;
+    
+      if(typeof _setSermonMap === 'function'){
+        window.setSermonMap = function(o){
+          const r = _setSermonMap.call(this, o);
+          // 현재 열린 단락 우선 갱신
+          const openPara = document.querySelector('#tree details.para[open]') || null;
+          if(openPara) WBP_applyFilledToParaEl(openPara);
+          // 전체도 안전하게 갱신
+          setTimeout(WBP_sweepAll, 0);
+          return r;
+        }
+      }
+      if(typeof _setDocMap === 'function'){
+        window.setDocMap = function(key, obj){
+          const r = _setDocMap.call(this, key, obj);
+          const openPara = document.querySelector('#tree details.para[open]') || null;
+          if(openPara) WBP_applyFilledToParaEl(openPara);
+          setTimeout(WBP_sweepAll, 0);
+          return r;
+        }
+      }
+    })();
+    
+    /** 단락 열릴 때도 즉시 반영 (토글 이벤트 위임) */
+    document.getElementById('tree')?.addEventListener('toggle', (e)=>{
+      const para = e.target?.closest?.('details.para');
+      if(para && para.open){ WBP_applyFilledToParaEl(para); }
+    }, true);
+    
+    /** 수동 새로고침 핫키(옵션): Alt+L */
+    window.addEventListener('keydown', (e)=>{
+      if(e.altKey && e.key.toLowerCase()==='l'){ WBP_sweepAll(); }
+    });
+    </script>
+
 </body>
 </html>
