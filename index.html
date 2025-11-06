@@ -226,6 +226,22 @@
     details.para .pcontent[contenteditable="true"]{
       outline: 1px dashed #3b4b7a; outline-offset: 2px;
     }
+
+/* ==== 컨텐츠가 채워진 버튼 시각 강조 ==== */
+.ptoolbar button.filled {
+  background: color-mix(in hsl, var(--accent) 25%, var(--panel) 65%);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px color-mix(in hsl, var(--accent) 35%, transparent 65%) inset;
+}
+.ptoolbar button.filled::after{
+  content: "●";
+  font-size: 10px;
+  margin-left: 6px;
+  color: var(--titleBlue);
+  opacity: .9;
+}
+
+    
 </style>
 
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600&family=Nanum+Myeongjo&display=swap" rel="stylesheet">
