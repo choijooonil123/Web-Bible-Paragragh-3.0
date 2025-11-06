@@ -313,126 +313,154 @@
 
   <script>
 /* === Paragraph .pline Floating Toolbar (Bold/Italic/Underline/Color) === */
-  (function enablePlinetBar(){
-    const bar = document.getElementById('wbp-plbar');
-    const colorInp = document.getElementById('wbp-plcolor');
-    const docEl = document.body;
-    if(!bar || !docEl) return;
-  
-    let savedRange = null;
-  
-    function selInPline(){
-      const sel = window.getSelection();
-      if(!sel || sel.rangeCount===0) return false;
-      const c = sel.getRangeAt(0).commonAncestorContainer;
-      const el = (c.nodeType===1 ? c : c.parentElement);
-      const line = el?.closest?.('.pline');
-      if(!(line && document.body.contains(line))) return false;
-      const scope = line.closest('.pcontent');
-      if(scope && scope.getAttribute('contenteditable')!=='true'){
-        scope.setAttribute('contenteditable','true');
-      }
-      return true;
+ /* === Floating Toolbar for verse lines ( 안정판 ) === */
+(function enableVerseToolbar(){
+  const bar = document.getElementById('wbp-plbar');
+  const colorInp = document.getElementById('wbp-plcolor');
+  if(!bar){ console.warn('[WBP] toolbar element #wbp-plbar not found'); return; }
+
+  // 화면마다 구조가 조금씩 달라서 유연하게 매칭
+  const LINE_SELECTOR  = '.pline, p.verse, .verse-line';         // 선택 허용 라인
+  const SCOPE_SELECTOR = '.pcontent, .editor, main, body';       // contenteditable 부여 대상
+
+  let savedRange = null;
+
+  function findLineFromSelection(){
+    const sel = window.getSelection();
+    if(!sel || sel.rangeCount===0) return null;
+    const n = sel.getRangeAt(0).commonAncestorContainer;
+    const el = (n.nodeType===1 ? n : n.parentElement);
+    return el?.closest?.(LINE_SELECTOR) || null;
+  }
+  function ensureEditableScope(line){
+    // 라인을 감싸는 편집 가능한 컨테이너를 찾아서 없으면 부여
+    const scope = line.closest(SCOPE_SELECTOR) || line.parentElement || line;
+    if(scope && scope.getAttribute('contenteditable')!=='true'){
+      scope.setAttribute('contenteditable','true');
     }
-    function saveSel(){
-      const sel = window.getSelection();
-      if(sel && sel.rangeCount>0) savedRange = sel.getRangeAt(0).cloneRange();
+  }
+  function hasRealSelection(){
+    const sel = window.getSelection();
+    return !!(sel && sel.rangeCount && !sel.getRangeAt(0).collapsed);
+  }
+  function saveSel(){
+    const sel = window.getSelection();
+    if(sel && sel.rangeCount>0) savedRange = sel.getRangeAt(0).cloneRange();
+  }
+  function restoreSel(){
+    if(!savedRange) return false;
+    const sel = window.getSelection();
+    sel.removeAllRanges(); sel.addRange(savedRange);
+    return true;
+  }
+  function getSelRect(){
+    const sel = window.getSelection();
+    if(!sel || sel.rangeCount===0) return null;
+    const r = sel.getRangeAt(0).cloneRange();
+    let rect = r.getBoundingClientRect();
+    if(!rect || (rect.width===0 && rect.height===0)){
+      const span = document.createElement('span');
+      span.appendChild(document.createTextNode('\u200b'));
+      r.insertNode(span);
+      rect = span.getBoundingClientRect();
+      span.remove();
     }
-    function restoreSel(){
-      if(!savedRange) return false;
-      const sel = window.getSelection();
-      sel.removeAllRanges(); sel.addRange(savedRange);
-      return true;
+    return rect;
+  }
+  function showBarIfLine(){
+    if(!hasRealSelection()){ hide(); return; }
+    const line = findLineFromSelection();
+    if(!line){ hide(); return; }
+    ensureEditableScope(line);
+
+    const rect = getSelRect();
+    if(!rect){ hide(); return; }
+
+    // fixed 기준: viewport 좌표 그대로 사용
+    bar.style.left = (rect.left + rect.width/2) + 'px';
+    bar.style.top  = rect.top + 'px';
+    bar.hidden = false;
+    saveSel();
+  }
+  function hide(){ bar.hidden = true; }
+
+  // 툴바 조작
+  bar.addEventListener('mousedown', e=> e.preventDefault());
+  bar.addEventListener('click', e=>{
+    const btn = e.target.closest('button'); if(!btn) return;
+    if(!restoreSel()) return;
+
+    const cmd = btn.dataset.cmd;
+    const act = btn.dataset.act;
+
+    if(cmd){
+      document.execCommand(cmd,false,null);   // bold / italic / underline
+      saveSel(); showBarIfLine();
+      return;
     }
-    function selRect(){
-      const sel = window.getSelection();
-      if(!sel || sel.rangeCount===0) return null;
-      const r = sel.getRangeAt(0).cloneRange();
-      let rect = r.getBoundingClientRect();
-      if(!rect || (rect.width===0 && rect.height===0)){
-        const span = document.createElement('span');
-        span.appendChild(document.createTextNode('\u200b'));
-        r.insertNode(span);
-        rect = span.getBoundingClientRect();
-        span.remove();
-      }
-      return rect;
+    if(act==='clearColor'){
+      try{
+        const sel = window.getSelection(); if(!sel || sel.rangeCount===0) return;
+        const range = sel.getRangeAt(0);
+        const frag  = range.cloneContents();
+        const div   = document.createElement('div'); div.appendChild(frag);
+        div.querySelectorAll('span, font').forEach(n=>{
+          if(n.style?.color) n.style.color = '';
+          if(n.hasAttribute?.('color')) n.removeAttribute('color');
+          if(n.getAttribute?.('style')==='') n.removeAttribute('style');
+        });
+        range.deleteContents();
+        document.execCommand('insertHTML', false, div.innerHTML || div.textContent || '');
+      }catch(_){}
+      saveSel(); showBarIfLine();
     }
-    function showBar(){
-      const sel = window.getSelection();
-      if(!sel || sel.isCollapsed || !selInPline()){ hide(); return; }
-      const rect = selRect(); if(!rect){ hide(); return; }
-      bar.style.left = (rect.left + rect.width/2) + 'px';
-      bar.style.top  = rect.top + 'px';
-      bar.hidden = false;
-      saveSel();
+  });
+
+  colorInp?.addEventListener('input', ()=>{
+    if(!restoreSel()) return;
+    document.execCommand('foreColor', false, colorInp.value);
+    saveSel(); showBarIfLine();
+  });
+
+  // 선택 변화에 반응 — 드래그/키입력/마우스업 모두 커버
+  document.addEventListener('selectionchange', ()=> setTimeout(showBarIfLine, 0));
+  document.addEventListener('mouseup',         ()=> setTimeout(showBarIfLine, 0));
+  document.addEventListener('keyup',           ()=> setTimeout(showBarIfLine, 0));
+  window.addEventListener('scroll', hide, {passive:true});
+  window.addEventListener('resize', hide);
+
+  // 단축키(Ctrl/Cmd + B/I/U) — 라인 내부에서만 작동
+  window.addEventListener('keydown', (e)=>{
+    if(!(e.ctrlKey||e.metaKey)) return;
+    const k = e.key.toLowerCase();
+    if(!['b','i','u'].includes(k)) return;
+    if(!findLineFromSelection()) return;
+    if(!hasRealSelection()) return;
+    e.preventDefault();
+    document.execCommand(k==='b'?'bold':k==='i'?'italic':'underline', false, null);
+    setTimeout(showBarIfLine, 0);
+  });
+
+  // 디버그 강제 표시(옵션): Alt+K -> 현재 선택에서 강제 표시
+  window.addEventListener('keydown', (e)=>{
+    if(e.altKey && e.key.toLowerCase()==='k'){
+      setTimeout(showBarIfLine, 0);
     }
-    function hide(){ bar.hidden = true; }
-  
-    bar.addEventListener('mousedown', e=> e.preventDefault());
-    bar.addEventListener('click', e=>{
-      const btn = e.target.closest('button'); if(!btn) return;
-      if(!restoreSel()) return;
-  
-      const cmd = btn.dataset.cmd;
-      const act = btn.dataset.act;
-      if(cmd){
-        document.execCommand(cmd,false,null);
-        saveSel(); showBar();
-        return;
-      }
-      if(act==='clearColor'){
-        try{
-          const sel = window.getSelection(); if(!sel || sel.rangeCount===0) return;
-          const range = sel.getRangeAt(0);
-          const frag  = range.cloneContents();
-          const div   = document.createElement('div'); div.appendChild(frag);
-          div.querySelectorAll('span, font').forEach(n=>{
-            if(n.style?.color) n.style.color = '';
-            if(n.hasAttribute?.('color')) n.removeAttribute('color');
-            if(n.getAttribute?.('style')==='') n.removeAttribute('style');
-          });
-          range.deleteContents();
-          document.execCommand('insertHTML', false, div.innerHTML || div.textContent || '');
-        }catch(_){}
-        saveSel(); showBar();
-      }
-    });
-    colorInp?.addEventListener('input', ()=>{
-      if(!restoreSel()) return;
-      document.execCommand('foreColor', false, colorInp.value);
-      saveSel(); showBar();
-    });
-  
-    document.addEventListener('selectionchange', ()=>{
-      if(selInPline()) showBar(); else hide();
-    });
-    document.addEventListener('mouseup', ()=> setTimeout(showBar, 0));
-    document.addEventListener('keyup',   ()=> setTimeout(showBar, 0));
-    window.addEventListener('scroll', hide, {passive:true});
-    window.addEventListener('resize', hide);
-  
-    window.addEventListener('keydown', (e)=>{
-      if(!(e.ctrlKey||e.metaKey)) return;
-      const k=e.key.toLowerCase();
-      if(!['b','i','u'].includes(k)) return;
-      if(!selInPline()) return;
-      e.preventDefault();
-      document.execCommand(k==='b'?'bold':k==='i'?'italic':'underline', false, null);
-      setTimeout(showBar, 0);
-    });
-  })();
+  });
+})();
+
   </script>
 
   <!-- 플로팅 서식툴바: 절(.verse) 선택 시에만 표시 -->
-  <div id="vbar" hidden role="toolbar" aria-label="Verse formatting">
+  <div id="wbp-plbar" hidden role="toolbar" aria-label="절 서식">
     <button type="button" data-cmd="bold" title="굵게 (Ctrl+B)"><b>B</b></button>
     <button type="button" data-cmd="italic" title="기울임 (Ctrl+I)"><i>I</i></button>
     <button type="button" data-cmd="underline" title="밑줄 (Ctrl+U)"><u>U</u></button>
     <div class="divider"></div>
-    <input id="vcolor" type="color" title="글자색" />
+    <input id="wbp-plcolor" type="color" title="글자색" />
     <button type="button" data-act="clearColor" title="색 제거">⨯</button>
   </div>
+
 
 
 </body>
