@@ -805,6 +805,109 @@
     })();
     </script>
 
+    <script>
+    /* ===========================================================
+       Web-Bible-Paragraph 3.0 — 특정 단락 서식 초기화 버튼
+       - 각 단락(details.para)의 툴바에 “서식 초기화” 버튼 자동 추가
+       - 클릭 시: 해당 단락 내 절들의 LocalStorage(wbps.versefmt.v1)
+         저장 항목 제거 + 원문 텍스트로 복원
+       =========================================================== */
+    
+    /* 절 서식 저장 키 */
+    const STORAGE_VERSE_FMT = 'wbps.versefmt.v1';
+    
+    /* 유틸 */
+    function getVerseFmtMap(){
+      try{ return JSON.parse(localStorage.getItem(STORAGE_VERSE_FMT) || '{}'); }
+      catch{ return {}; }
+    }
+    function setVerseFmtMap(obj){
+      localStorage.setItem(STORAGE_VERSE_FMT, JSON.stringify(obj));
+    }
+    
+    /* para element → book/chap/idx 추출 */
+    function metaFromParaEl(paraEl){
+      const t = paraEl.querySelector('summary .ptitle');
+      if(!t) return null;
+      const book = t.dataset.book;
+      const chap = parseInt(t.dataset.ch,10);
+      const idx  = parseInt(t.dataset.idx,10);
+      if(!book || !Number.isFinite(chap) || !Number.isFinite(idx)) return null;
+      return {book,chap,idx};
+    }
+    
+    /* 단락 전체 서식 초기화 로직 */
+    function clearFormattingForPara(paraEl){
+      const meta = metaFromParaEl(paraEl);
+      if(!meta) return alert('단락 정보를 찾을 수 없습니다.');
+    
+      const para = window.BIBLE?.books?.[meta.book]?.[meta.chap]?.paras?.[meta.idx];
+      if(!para) return alert('성경 본문 데이터가 없습니다.');
+    
+      const prefix = `${meta.book}|${meta.chap}|${para.ref}|`;
+    
+      // LocalStorage map 정리
+      const map = getVerseFmtMap();
+      const newMap = {};
+      let count = 0;
+      for(const [k,v] of Object.entries(map)){
+        if(k.startsWith(prefix)) { count++; continue; }
+        newMap[k]=v;
+      }
+      setVerseFmtMap(newMap);
+    
+      // DOM에서 해당 절 라인 복원
+      paraEl.querySelectorAll('.pline, .verse-line, p.verse').forEach(line=>{
+        const textOnly = line.textContent.trim();
+        if(textOnly){
+          // sup절번호 보존 시 다음처럼 약간 수정 가능
+          line.innerHTML = textOnly;
+        }
+      });
+    
+      alert(`'${meta.book} ${meta.chap}장 (${para.ref})' 단락의 서식 ${count}개를 초기화했습니다.`);
+    }
+    
+    /* 각 단락 툴바에 버튼 자동 추가 */
+    (function injectClearBtn(){
+      const root = document.getElementById('tree');
+      if(!root) return;
+      const addBtn = (tb, paraEl)=>{
+        if(tb.querySelector('.btnClearFmt')) return; // 중복방지
+        const btn = document.createElement('button');
+        btn.className = 'btnClearFmt';
+        btn.textContent = '서식초기화';
+        btn.title = '이 단락 안의 굵게/기울임/밑줄/색상 서식을 초기화합니다.';
+        btn.style.background = '#552222';
+        btn.style.color = '#fff';
+        btn.style.border = '1px solid #aa4444';
+        btn.style.borderRadius = '8px';
+        btn.addEventListener('click', ()=> clearFormattingForPara(paraEl));
+        tb.appendChild(btn);
+      };
+    
+      // 초기 스윕
+      root.querySelectorAll('details.para').forEach(paraEl=>{
+        const tb = paraEl.querySelector('.ptoolbar');
+        if(tb) addBtn(tb, paraEl);
+      });
+    
+      // 이후 새 단락이 추가될 때도 자동 삽입
+      const mo = new MutationObserver((muts)=>{
+        for(const m of muts){
+          m.addedNodes?.forEach?.(n=>{
+            if(!(n instanceof HTMLElement)) return;
+            const paraEl = n.matches?.('details.para') ? n : n.closest?.('details.para');
+            const tb = paraEl?.querySelector?.('.ptoolbar');
+            if(paraEl && tb) addBtn(tb, paraEl);
+          });
+        }
+      });
+      mo.observe(root, {subtree:true, childList:true});
+    })();
+    </script>
+
+
   
 </body>
 </html>
