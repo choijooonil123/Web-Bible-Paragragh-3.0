@@ -666,5 +666,145 @@
     });
     </script>
 
+    <script>
+    /* ===========================================================
+       Web-Bible-Paragraph 3.0 — 절(verse line) 서식 영구 보존 모듈
+       - 기존 코드 절대 삭제하지 않고, 맨 아래에 '추가'만 해도 동작
+       - 기능:
+         1) 플로팅 툴바로 적용한 서식을 localStorage에 저장
+         2) 새로 렌더된 절에 저장된 서식을 자동 복원
+       =========================================================== */
+    
+    /* 저장 키 */
+    const STORAGE_VERSE_FMT = 'wbps.versefmt.v1';
+    
+    /* 저장 map 유틸 */
+    function getVerseFmtMap(){
+      try{ return JSON.parse(localStorage.getItem(STORAGE_VERSE_FMT) || '{}'); }
+      catch{ return {}; }
+    }
+    function setVerseFmtMap(obj){
+      localStorage.setItem(STORAGE_VERSE_FMT, JSON.stringify(obj));
+    }
+    
+    /* 현재 절(.pline) → 고유키 계산
+       key 형식:  `${book}|${chap}|${ref}|v${verse}`
+       - book/chap/ref 는 summary .ptitle dataset과 BIBLE로 얻음
+       - verse는 .pline.dataset.verse */
+    function keyForPline(plineEl){
+      try{
+        const paraEl = plineEl.closest('details.para');
+        if(!paraEl) return null;
+    
+        const t = paraEl.querySelector('summary .ptitle');
+        if(!t) return null;
+    
+        const book = t.dataset.book;
+        const chap = parseInt(t.dataset.ch, 10);
+        const idx  = parseInt(t.dataset.idx, 10);
+    
+        const para = (window.BIBLE?.books?.[book]?.[chap]?.paras || [])[idx];
+        if(!para) return null;
+    
+        const v = plineEl.dataset.verse;
+        if(!v) return null;
+    
+        return `${book}|${chap}|${para.ref}|v${v}`;
+      }catch(_){
+        return null;
+      }
+    }
+    
+    /* ✅ 1) 서식 저장: 현재 선택된 절 라인의 innerHTML 저장 */
+    function saveCurrentLineFormatting(){
+      const sel = window.getSelection?.();
+      if(!sel || !sel.rangeCount) return;
+      const n = sel.getRangeAt(0).commonAncestorContainer;
+      const el = (n.nodeType === 1 ? n : n.parentElement);
+      const line = el?.closest?.('.pline, .verse-line, p.verse');
+      if(!line) return;
+    
+      const key = keyForPline(line);
+      if(!key) return;
+    
+      const map = getVerseFmtMap();
+      map[key] = line.innerHTML;  // 서식 포함 그대로 저장
+      setVerseFmtMap(map);
+    }
+    
+    /* ✅ 2) 서식 복원: 라인이 생성되면 저장값으로 덮어쓰기 */
+    function restoreLineFormatting(line){
+      const key = keyForPline(line);
+      if(!key) return;
+      const map = getVerseFmtMap();
+      if(map[key]){
+        // 안전하게 <sup> 번호를 보존하고 싶다면 아래 로직으로 혼합 가능.
+        // 지금은 저장된 innerHTML로 완전 덮어쓰기 (가장 간단/안정)
+        line.innerHTML = map[key];
+      }
+    }
+    
+    /* ✅ 3) #tree 영역에 절이 추가될 때 자동 복원 (비침투형) */
+    (function watchTreeForNewLines(){
+      const root = document.getElementById('tree');
+      if(!root) return;
+    
+      // 초기 스윕
+      root.querySelectorAll('.pline, .verse-line, p.verse').forEach(restoreLineFormatting);
+    
+      // 이후 동적 추가 감시
+      const mo = new MutationObserver((muts)=>{
+        for(const m of muts){
+          m.addedNodes?.forEach?.(node=>{
+            if(!(node instanceof HTMLElement)) return;
+            if(node.matches?.('.pline, .verse-line, p.verse')){
+              restoreLineFormatting(node);
+            }
+            // 자식 쪽에 생긴 경우까지 커버
+            node.querySelectorAll?.('.pline, .verse-line, p.verse')?.forEach?.(restoreLineFormatting);
+          });
+        }
+      });
+      mo.observe(root, {subtree:true, childList:true});
+    })();
+    
+    /* ✅ 4) 플로팅 툴바 동작과 키입력에 저장 훅 연결
+       - 이미 올려두신 플로팅바(#wbp-plbar)와 execCommand를 그대로 사용하면서
+         "적용 직후"에 saveCurrentLineFormatting()만 호출해 주면 됨.
+       - 기존 툴바 코드가 위쪽에 있으므로, 여기에 '보조 리스너'만 둬도 동작합니다. */
+    (function hookToolbarSaves(){
+      const bar = document.getElementById('wbp-plbar');
+      const color = document.getElementById('wbp-plcolor');
+    
+      // 툴바 버튼 클릭 후 저장
+      if(bar){
+        bar.addEventListener('click', (e)=>{
+          const btn = e.target.closest('button');
+          if(!btn) return;
+          // 기존 execCommand는 당신의 코드에서 이미 실행됨
+          // 여기서는 '적용 직후 저장'만 추가
+          setTimeout(saveCurrentLineFormatting, 0);
+        });
+      }
+      // 색상 즉시 반영 후 저장
+      if(color){
+        color.addEventListener('input', ()=>{
+          setTimeout(saveCurrentLineFormatting, 0);
+        });
+      }
+    
+      // 사용자가 키보드로 직접 지우거나 붙여넣기 해도 저장
+      // (선택 영역이 있는 상태에서만 의미가 있으므로, 약하게 후처리)
+      document.addEventListener('keyup', ()=>{
+        // 플로팅바 사용 없이 수동 편집했을 때도 보존
+        setTimeout(saveCurrentLineFormatting, 0);
+      });
+      document.addEventListener('mouseup', ()=>{
+        setTimeout(saveCurrentLineFormatting, 0);
+      });
+    })();
+    </script>
+
+  
 </body>
 </html>
