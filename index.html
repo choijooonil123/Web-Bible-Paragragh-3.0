@@ -678,22 +678,45 @@
     function setVerseFmtMap(obj){
       localStorage.setItem(STORAGE_VERSE_FMT, JSON.stringify(obj));
     }
+    
+    // ✅ 교체본: verse 번호가 없을 때 ‘단락 내 n번째 라인’으로 fallback
     function keyForPline(plineEl){
       try{
         const paraEl = plineEl.closest('details.para');
         if(!paraEl) return null;
+    
         const t = paraEl.querySelector('summary .ptitle');
         if(!t) return null;
+    
         const book = t.dataset.book;
         const chap = parseInt(t.dataset.ch, 10);
         const idx  = parseInt(t.dataset.idx, 10);
+    
         const para = (window.BIBLE?.books?.[book]?.[chap]?.paras || [])[idx];
         if(!para) return null;
-        const v = plineEl.dataset.verse;
-        if(!v) return null;
+    
+        // 1) 우선 data-verse → 2) sup 안의 숫자 → 3) 형제 index
+        let v = plineEl.dataset.verse;
+        if(!v){
+          const sup = plineEl.querySelector('sup');
+          if(sup && /^\d+$/.test(sup.textContent.trim())) {
+            v = sup.textContent.trim();
+          }
+        }
+        if(!v){
+          // 단락 내 .pline 순번으로 fallback
+          const siblings = Array.from(paraEl.querySelectorAll('.pline, .verse-line, p.verse'));
+          const i = Math.max(0, siblings.indexOf(plineEl)); // 0-based
+          v = `i${i}`; // ex) v=i0, i1 …
+        }
+    
         return `${book}|${chap}|${para.ref}|v${v}`;
-      }catch(_){ return null; }
+      }catch(_){
+        return null;
+      }
     }
+
+    
     function saveCurrentLineFormatting(){
       const sel = window.getSelection?.();
       if(!sel || !sel.rangeCount) return;
@@ -713,23 +736,66 @@
       const map = getVerseFmtMap();
       if(map[key]){ line.innerHTML = map[key]; }
     }
+    
+    // ✅ 교체본: 초기 렌더 완료를 ‘정말로’ 기다렸다가 1회 복원 + 이후에도 변경 감지
     (function watchTreeForNewLines(){
       const root = document.getElementById('tree');
       if(!root) return;
-      root.querySelectorAll('.pline, .verse-line, p.verse').forEach(restoreLineFormatting);
-      const mo = new MutationObserver((muts)=>{
-        for(const m of muts){
-          m.addedNodes?.forEach?.(node=>{
-            if(!(node instanceof HTMLElement)) return;
-            if(node.matches?.('.pline, .verse-line, p.verse')){
-              restoreLineFormatting(node);
-            }
-            node.querySelectorAll?.('.pline, .verse-line, p.verse')?.forEach?.(restoreLineFormatting);
-          });
+    
+      let rafId = null;
+      let pending = false;
+    
+      function batchRestore(){
+        if(pending) return;
+        pending = true;
+        // 렌더가 연속으로 들어오면 한 프레임 뒤에 합쳐서 복원
+        rafId && cancelAnimationFrame(rafId);
+        rafId = requestAnimationFrame(()=>{
+          // 현재 화면에 있는 모든 라인 복원
+          root.querySelectorAll('.pline, .verse-line, p.verse').forEach(restoreLineFormatting);
+          pending = false;
+        });
+      }
+    
+      // 1) 최초: 트리가 비어있다가 채워지는 시점까지 확실히 대기
+      const startWait = new MutationObserver(()=>{
+        if(root.querySelector('.pline, .verse-line, p.verse')) {
+          batchRestore();
+          startWait.disconnect();
         }
       });
-      mo.observe(root, {subtree:true, childList:true});
+      startWait.observe(root, {subtree:true, childList:true});
+    
+      // 2) 이후: 어떤 재렌더/추가/치환에도 곧바로 재복원
+      const mo = new MutationObserver((muts)=>{
+        for(const m of muts){
+          if(m.type === 'childList'){
+            if(m.addedNodes && m.addedNodes.length){
+              batchRestore();
+              break;
+            }
+          }
+          if(m.type === 'characterData'){
+            batchRestore();
+            break;
+          }
+        }
+      });
+      mo.observe(root, {
+        subtree: true,
+        childList: true,
+        characterData: true
+      });
+    
+      // 3) DOMContentLoaded 이후에도 한 번 더 안전복원 (직접 호출해도 무해)
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', batchRestore, {once:true});
+      } else {
+        batchRestore();
+      }
     })();
+
+    
     (function hookToolbarSaves(){
       const bar = document.getElementById('wbp-plbar');
       const color = document.getElementById('wbp-plcolor');
@@ -1086,6 +1152,152 @@
       });
     })();
   </script>
+
+  <script>
+    /* ==========================================================
+       WBP v3 — Export/Import 패치 (절문장 서식 포함)
+       - 기존 기능 보존 / 하단에 '추가'만 하면 작동
+       - 내보내기 JSON에 wbps.versefmt.v1(절 서식) 포함
+       - 가져오기 시 병합 후 UI 즉시 갱신
+    ========================================================== */
+    (function initWBPExportImport(){
+      if (window.WBP_EI_READY) return; // 중복 방지
+      window.WBP_EI_READY = true;
+    
+      // === 로컬스토리지 키들 (당신 환경의 키 이름에 맞춰 두세요)
+      const STORAGE = {
+        SERMON:          window.STORAGE_SERMON          || 'wbps.sermon.v1',
+        UNIT_CTX:        window.STORAGE_UNIT_CTX        || 'wbps.unitctx.v1',
+        WHOLE_CTX:       window.STORAGE_WHOLE_CTX       || 'wbps.wholectx.v1',
+        COMMENTARY:      window.STORAGE_COMMENTARY      || 'wbps.commentary.v1',
+        SUMMARY:         window.STORAGE_SUMMARY         || 'wbps.summary.v1',
+        VERSE_FMT:                                 'wbps.versefmt.v1', // ★ 절문장 서식
+      };
+    
+      // === 안전 JSON 유틸
+      const getLS = (key) => {
+        try { return JSON.parse(localStorage.getItem(key) || '{}'); }
+        catch { return {}; }
+      };
+      const setLS = (key, obj) => {
+        localStorage.setItem(key, JSON.stringify(obj));
+      };
+    
+      // 얕은 병합(빈 값은 덮어쓰지 않음)
+      function mergeObjects(base = {}, incoming = {}) {
+        const out = {...base};
+        for (const [k, v] of Object.entries(incoming)) {
+          if (v === null || v === undefined) continue;
+          if (typeof v === 'string' && v.trim() === '') continue;
+          out[k] = v;
+        }
+        return out;
+      }
+    
+      // 다운로드 유틸
+      function downloadJSON(filename, dataObj) {
+        const blob = new Blob([JSON.stringify(dataObj, null, 2)], {type: 'application/json'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(()=> {
+          URL.revokeObjectURL(a.href);
+          a.remove();
+        }, 0);
+      }
+    
+      // === 내보내기
+      function handleExport() {
+        // 필요한 모든 스토리지 키를 수집 (서식 포함!)
+        const payload = {};
+        for (const [label, key] of Object.entries(STORAGE)) {
+          payload[key] = getLS(key);
+        }
+        // (선택) 메타 정보
+        payload.__meta = {
+          app: 'Web-Bible-Paragraph 3.0',
+          exported_at: new Date().toISOString(),
+          keys: Object.values(STORAGE)
+        };
+        downloadJSON(`wbp-backup-${Date.now()}.json`, payload);
+        console.log('[WBP] Exported keys:', payload.__meta.keys);
+        alert('내보내기 완료 (절문장 서식 포함)');
+      }
+    
+      // === 가져오기
+      async function handleImport(file) {
+        if (!file) return;
+        const text = await file.text();
+        let incoming;
+        try {
+          incoming = JSON.parse(text);
+        } catch (e) {
+          alert('가져오기 실패: JSON 형식이 아닙니다.');
+          return;
+        }
+    
+        // 인식 가능한 키만 병합
+        let applied = 0;
+        for (const key of Object.values(STORAGE)) {
+          if (Object.prototype.hasOwnProperty.call(incoming, key)) {
+            const merged = mergeObjects(getLS(key), incoming[key]);
+            setLS(key, merged);
+            applied++;
+          }
+        }
+    
+        // UI 갱신: 버튼 filled 상태 / 절 서식 복원
+        try { window.WBP_sweepAll && window.WBP_sweepAll(); } catch {}
+        // 절 서식 강제 재적용: restoreLineFormatting 이 있으면 사용
+        try {
+          const root = document.getElementById('tree');
+          if (root && typeof window.restoreLineFormatting === 'function') {
+            root.querySelectorAll('.pline, .verse-line, p.verse')
+                .forEach(el => window.restoreLineFormatting(el));
+          }
+          // 혹시 렌더 타이밍 이슈 대비, 한 프레임 뒤에 한 번 더
+          requestAnimationFrame(()=> {
+            try {
+              const root2 = document.getElementById('tree');
+              if (root2 && typeof window.restoreLineFormatting === 'function') {
+                root2.querySelectorAll('.pline, .verse-line, p.verse')
+                     .forEach(el => window.restoreLineFormatting(el));
+              }
+            } catch {}
+          });
+        } catch {}
+    
+        alert(`가져오기 완료: ${applied}개 키 병합 (절문장 서식 포함)`);
+      }
+    
+      // === 버튼 연결 (중복 바인딩 방지)
+      const exportBtn = document.getElementById('btnExportAll');
+      const importBtn = document.getElementById('btnImportAll');
+      const importFile = document.getElementById('importFile');
+    
+      if (exportBtn && !exportBtn.dataset.bound) {
+        exportBtn.dataset.bound = '1';
+        exportBtn.addEventListener('click', handleExport);
+      }
+      if (importBtn && !importBtn.dataset.bound) {
+        importBtn.dataset.bound = '1';
+        importBtn.addEventListener('click', () => importFile?.click());
+      }
+      if (importFile && !importFile.dataset.bound) {
+        importFile.dataset.bound = '1';
+        importFile.addEventListener('change', (e) => {
+          const f = e.target.files && e.target.files[0];
+          if (!f) return;
+          handleImport(f).finally(() => { importFile.value = ''; });
+        });
+      }
+    
+      console.log('[WBP] Export/Import patch ready (includes verse formatting).');
+    })();
+    </script>
+
 
 </body>
 </html>
