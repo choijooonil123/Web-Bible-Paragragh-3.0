@@ -750,6 +750,98 @@
     });
     </script>
 
+    <!-- === WBP Export/Import (절문장 서식 포함) === -->
+    <script>
+    window.addEventListener('DOMContentLoaded', function(){
+      // 내보낼 로컬스토리지 키 필터: 우리 앱 네임스페이스 + 반드시 포함해야 하는 키
+      const EXPORT_PREFIXES = ['wbps.', 'WBP.', 'wbp.'];   // 네임스페이스 프리픽스
+      const MUST_KEYS = [
+        'wbps.versefmt.v1',            // ✅ 절문장 서식맵
+        'STORAGE_SERMON',              // 설교 목록(프로젝트별 상이할 수 있음)
+        'STORAGE_UNIT_CTX',            // 단위성경속 맥락
+        'STORAGE_WHOLE_CTX',           // 전체성경속 맥락
+        'STORAGE_COMMENTARY',          // 주석
+        'STORAGE_SUMMARY'              // 내용흐름 요약
+      ];
+    
+      function isOurKey(k){
+        return EXPORT_PREFIXES.some(p=> k.startsWith(p)) || MUST_KEYS.includes(k);
+      }
+    
+      function collectAll(){
+        const out = {};
+        for(let i=0;i<localStorage.length;i++){
+          const k = localStorage.key(i);
+          if(!isOurKey(k)) continue;
+          const raw = localStorage.getItem(k);
+          try{ out[k] = JSON.parse(raw); } catch{ out[k] = raw; }
+        }
+        return out;
+      }
+    
+      function downloadJSON(obj, name){
+        const blob = new Blob([JSON.stringify(obj,null,2)], {type:'application/json'});
+        const a = document.createElement('a');
+        const t = new Date();
+        const fname = name || `wbp-export-${t.getFullYear()}${String(t.getMonth()+1).padStart(2,'0')}${String(t.getDate()).padStart(2,'0')}-${String(t.getHours()).padStart(2,'0')}${String(t.getMinutes()).padStart(2,'0')}${String(t.getSeconds()).padStart(2,'0')}.json`;
+        a.href = URL.createObjectURL(blob);
+        a.download = fname;
+        document.body.appendChild(a);
+        a.click();
+        URL.revokeObjectURL(a.href);
+        a.remove();
+      }
+    
+      // === 내보내기 버튼 ===
+      const btnExport = document.getElementById('btnExportAll');
+      btnExport?.addEventListener('click', ()=>{
+        const payload = {
+          __type: 'WBP_EXPORT',
+          __version: '3.2',
+          __createdAt: new Date().toISOString(),
+          data: collectAll()
+        };
+        downloadJSON(payload);
+      });
+    
+      // === 가져오기 버튼+파일 ===
+      const btnImport = document.getElementById('btnImportAll');
+      const fileInp   = document.getElementById('importFile');
+      btnImport?.addEventListener('click', ()=> fileInp?.click());
+    
+      fileInp?.addEventListener('change', (e)=>{
+        const f = e.target.files?.[0];
+        if(!f) return;
+        const reader = new FileReader();
+        reader.onload = () =>{
+          try{
+            const json = JSON.parse(String(reader.result||'{}'));
+            // 과거 백업(맵만)과 새 백업(payload.data) 둘 다 허용
+            const bag = json.data || json;
+            let count = 0;
+            for(const [k,v] of Object.entries(bag)){
+              if(!isOurKey(k)) continue; // 우리 키만 복원
+              localStorage.setItem(k, typeof v==='string' ? v : JSON.stringify(v));
+              count++;
+            }
+            alert(`가져오기 완료: ${count}개 항목을 복원했습니다.`);
+    
+            // 트리 완성 이후에 동작하는 복원 루틴이 있다면 이벤트로 트리거
+            // (당신이 app.js 끝에 넣은 `document.dispatchEvent(new CustomEvent('wbp:treeBuilt'));`와 호환)
+            document.dispatchEvent(new CustomEvent('wbp:importApplied'));
+            document.dispatchEvent(new CustomEvent('wbp:treeBuilt')); // 즉시 서식/filled 상태 반영
+          }catch(err){
+            console.error(err);
+            alert('가져오기 실패: JSON 파싱에 문제가 있습니다.');
+          }finally{
+            e.target.value = ''; // 같은 파일 재선택 가능하게 초기화
+          }
+        };
+        reader.readAsText(f, 'utf-8');
+      });
+    });
+    </script>
+
 
 </body>
 </html>
