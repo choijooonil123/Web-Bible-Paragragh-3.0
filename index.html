@@ -595,161 +595,30 @@
   })();
   </script>
 
-  <script>
-    /* =========================================================
-       WBP v3.2 — Export/Import (서식 포함) 안정 패치
-       - 기존 "내보내기/가져오기" 버튼(#btnExportAll/#btnImportAll)
-         로컬스토리지 전체(문서맵 + 절서식맵) 묶어서 백업/복원
-       - 이 스크립트는 DOMContentLoaded 이후에만 동작
-       - 기존 로직이 있어도 중복 실행되지 않도록 보호
-    ========================================================= */
-    window.addEventListener('DOMContentLoaded', () => {
-      // ====== 저장키 정의 (기존 앱의 키명을 최대한 존중) ======
-      // 이미 app.js에 동일 상수가 있으면 그대로 사용, 없으면 기본값
-      const STORAGE_SERMON      = window.STORAGE_SERMON      || 'wbps.sermons.v1';
-      const STORAGE_UNIT_CTX    = window.STORAGE_UNIT_CTX    || 'wbps.unitctx.v1';
-      const STORAGE_WHOLE_CTX   = window.STORAGE_WHOLE_CTX   || 'wbps.wholey.v1';
-      const STORAGE_COMMENTARY  = window.STORAGE_COMMENTARY  || 'wbps.comment.v1';
-      const STORAGE_SUMMARY     = window.STORAGE_SUMMARY     || 'wbps.summary.v1';
-      const STORAGE_VERSE_FMT   = window.STORAGE_VERSE_FMT   || 'wbps.versefmt.v2';  // ← 절문장 서식
+    <script>
+    // === Export handler dedupe guard ===
+    (function ensureSingleExportHandler(){
+      const btn = document.getElementById('btnExportAll');
+      if(!btn) return;
     
-      const EXPORT_KEYS = [
-        STORAGE_SERMON,
-        STORAGE_UNIT_CTX,
-        STORAGE_WHOLE_CTX,
-        STORAGE_COMMENTARY,
-        STORAGE_SUMMARY,
-        STORAGE_VERSE_FMT,
-      ];
+      // 이미 바인딩 했다면 재바인딩 금지
+      if (btn.dataset.boundExport === '1') return;
     
-      // ====== 유틸 ======
-      const el = (id) => document.getElementById(id);
-      const btnExport = el('btnExportAll');
-      const btnImport = el('btnImportAll');
-      const fileInput = el('importFile');
+      // 혹시 인라인 onclick이 있다면 제거(한 번에 끝)
+      if (typeof btn.onclick === 'function') btn.onclick = null;
     
-      function nowISO() {
-        const d = new Date();
-        const pad = (n)=> String(n).padStart(2,'0');
-        return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
-      }
+      // 기존에 addEventListener로 묶인 게 있을 수 있으니,
+      // 버튼을 클론→교체하여 모든 이전 리스너를 '초기화'
+      const clone = btn.cloneNode(true);
+      clone.id = 'btnExportAll';              // id 유지
+      clone.dataset.boundExport = '1';        // 바인딩 완료 마크
+      btn.replaceWith(clone);
     
-      function safeParse(json, fallback) {
-        try { return JSON.parse(json); } catch { return fallback; }
-      }
-    
-      function downloadJSON(obj, filename) {
-        const blob = new Blob([JSON.stringify(obj, null, 2)], {type:'application/json'});
-        const url  = URL.createObjectURL(blob);
-        const a    = document.createElement('a');
-        a.href = url; a.download = filename;
-        document.body.appendChild(a); a.click();
-        setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 0);
-      }
-    
-      function readAllToBundle() {
-        const data = {};
-        for (const key of EXPORT_KEYS) {
-          const raw = localStorage.getItem(key);
-          if (raw != null) data[key] = safeParse(raw, raw); // JSON이 아니어도 문자열로 보존
-        }
-        return {
-          __wbp_bundle__: 'v1',
-          app: 'Web-Bible-Paragraph',
-          exported_at: new Date().toISOString(),
-          data,
-        };
-      }
-    
-      function mergeOrReplaceLocalStorage(bundle, mode) {
-        const data = bundle?.data || {};
-        let replaced = 0, merged = 0;
-        for (const key of Object.keys(data)) {
-          const incoming = data[key];
-          const current  = safeParse(localStorage.getItem(key), null);
-    
-          if (mode === 'replace') {
-            localStorage.setItem(key, JSON.stringify(incoming));
-            replaced++;
-            continue;
-          }
-    
-          // merge 모드: 객체/배열은 합치고, 원시값/문자열은 교체
-          if (incoming && typeof incoming === 'object') {
-            if (Array.isArray(incoming)) {
-              localStorage.setItem(key, JSON.stringify(incoming)); // 배열은 교체
-            } else {
-              const mergedObj = Object.assign({}, (current && typeof current==='object' && !Array.isArray(current)) ? current : {}, incoming);
-              localStorage.setItem(key, JSON.stringify(mergedObj));
-            }
-          } else {
-            localStorage.setItem(key, JSON.stringify(incoming));
-          }
-          merged++;
-        }
-        return {replaced, merged};
-      }
-    
-      function requestTreeRefresh() {
-        // 앱이 지원하면 트리 재빌드 이벤트를 날림
-        try {
-          document.dispatchEvent(new CustomEvent('wbp:treeBuilt'));
-        } catch {}
-        // 추가 안전장치: 200ms 후 한 번 더
-        setTimeout(() => {
-          try { document.dispatchEvent(new CustomEvent('wbp:treeBuilt')); } catch {}
-        }, 200);
-      }
-    
-      // ====== 내보내기 핸들러(중복방지) ======
-      if (btnExport && !btnExport.dataset.wbpEnhanced) {
-        btnExport.dataset.wbpEnhanced = '1';
-        btnExport.addEventListener('click', (e) => {
-          try {
-            const bundle = readAllToBundle();
-            const stamp  = nowISO();
-            downloadJSON(bundle, `WBP-backup-${stamp}.json`);
-            const statusEl = document.getElementById('status');
-            if (statusEl) statusEl.textContent = '백업(서식 포함) 파일을 다운로드했습니다.';
-          } catch (err) {
-            console.error('[WBP export] failed:', err);
-            alert('내보내기 중 오류가 발생했습니다.');
-          }
-        });
-      }
-    
-      // ====== 가져오기 핸들러(중복방지) ======
-      if (btnImport && !btnImport.dataset.wbpEnhanced) {
-        btnImport.dataset.wbpEnhanced = '1';
-        btnImport.addEventListener('click', () => fileInput?.click());
-      }
-    
-      if (fileInput && !fileInput.dataset.wbpEnhanced) {
-        fileInput.dataset.wbpEnhanced = '1';
-        fileInput.addEventListener('change', async (e) => {
-          const f = e.target.files && e.target.files[0];
-          if (!f) return;
-          try {
-            const text   = await f.text();
-            const parsed = safeParse(text, null);
-            if (!parsed || parsed.__wbp_bundle__ !== 'v1') {
-              if (!confirm('표준 백업 포맷이 아닙니다. 강제로 가져올까요?')) return;
-            }
-            const mode = confirm('가져온 데이터로 "완전 교체" 하시겠습니까?\n[확인]=교체, [취소]=병합') ? 'replace' : 'merge';
-            const res = mergeOrReplaceLocalStorage(parsed || {data: safeParse(text,{})}, mode);
-            // 트리/절 복원 트리거
-            requestTreeRefresh();
-            alert(`가져오기 완료\n- 모드: ${mode}\n- 반영된 키 수: ${Object.keys((parsed||{}).data||{}).length}\n- 병합:${res.merged} / 교체:${res.replaced}\n\n필요 시 단락을 다시 열거나 새로고침하세요.`);
-            e.target.value = ''; // 같은 파일 재선택 가능하게 초기화
-          } catch (err) {
-            console.error('[WBP import] failed:', err);
-            alert('가져오기 중 오류가 발생했습니다.');
-          }
-        });
-      }
-    });
+      // 이제부터는 우리 쪽 핸들러만 연결하면 두 번 실행 안 됨
+      window.__WBP_GET_EXPORT_BUTTON__ = () => document.getElementById('btnExportAll');
+    })();
     </script>
-
+  
     <!-- === WBP Export/Import (절문장 서식 포함) === -->
     <script>
     window.addEventListener('DOMContentLoaded', function(){
@@ -793,54 +662,56 @@
       }
     
       // === 내보내기 버튼 ===
-      const btnExport = document.getElementById('btnExportAll');
-      btnExport?.addEventListener('click', ()=>{
-        const payload = {
-          __type: 'WBP_EXPORT',
-          __version: '3.2',
-          __createdAt: new Date().toISOString(),
-          data: collectAll()
-        };
-        downloadJSON(payload);
-      });
-    
-      // === 가져오기 버튼+파일 ===
-      const btnImport = document.getElementById('btnImportAll');
-      const fileInp   = document.getElementById('importFile');
-      btnImport?.addEventListener('click', ()=> fileInp?.click());
-    
-      fileInp?.addEventListener('change', (e)=>{
-        const f = e.target.files?.[0];
-        if(!f) return;
-        const reader = new FileReader();
-        reader.onload = () =>{
-          try{
-            const json = JSON.parse(String(reader.result||'{}'));
-            // 과거 백업(맵만)과 새 백업(payload.data) 둘 다 허용
-            const bag = json.data || json;
-            let count = 0;
-            for(const [k,v] of Object.entries(bag)){
-              if(!isOurKey(k)) continue; // 우리 키만 복원
-              localStorage.setItem(k, typeof v==='string' ? v : JSON.stringify(v));
-              count++;
-            }
-            alert(`가져오기 완료: ${count}개 항목을 복원했습니다.`);
-    
-            // 트리 완성 이후에 동작하는 복원 루틴이 있다면 이벤트로 트리거
-            // (당신이 app.js 끝에 넣은 `document.dispatchEvent(new CustomEvent('wbp:treeBuilt'));`와 호환)
-            document.dispatchEvent(new CustomEvent('wbp:importApplied'));
-            document.dispatchEvent(new CustomEvent('wbp:treeBuilt')); // 즉시 서식/filled 상태 반영
-          }catch(err){
-            console.error(err);
-            alert('가져오기 실패: JSON 파싱에 문제가 있습니다.');
-          }finally{
-            e.target.value = ''; // 같은 파일 재선택 가능하게 초기화
-          }
-        };
-        reader.readAsText(f, 'utf-8');
-      });
-    });
-    </script>
+  const btnExport = (window.__WBP_GET_EXPORT_BUTTON__?.() || document.getElementById('btnExportAll'));
+  function handleExportClick(e){
+    e.preventDefault();
+    e.stopImmediatePropagation();  // 혹시 남아있는 다른 리스너가 또 받지 못하게
+    const payload = {
+      __type: 'WBP_EXPORT',
+      __version: '3.2',
+      __createdAt: new Date().toISOString(),
+      data: collectAll()
+    };
+    downloadJSON(payload);
+  }
+  // 중복 방지: data-boundExport 체크
+  if (btnExport && btnExport.dataset.boundExport !== '2') {
+    btnExport.addEventListener('click', handleExportClick, {capture:true});
+    btnExport.dataset.boundExport = '2';
+  }
+
+  // === 가져오기 버튼/파일 ===
+  const btnImport = document.getElementById('btnImportAll');
+  const fileInp   = document.getElementById('importFile');
+  btnImport?.addEventListener('click', ()=> fileInp?.click());
+  fileInp?.addEventListener('change', (e)=>{
+    const f = e.target.files?.[0];
+    if(!f) return;
+    const reader = new FileReader();
+    reader.onload = () =>{
+      try{
+        const json = JSON.parse(String(reader.result||'{}'));
+        const bag = json.data || json;
+        let count = 0;
+        for(const [k,v] of Object.entries(bag)){
+          if(!k) continue;
+          localStorage.setItem(k, typeof v==='string' ? v : JSON.stringify(v));
+          count++;
+        }
+        alert(`가져오기 완료: ${count}개 항목을 복원했습니다.`);
+        document.dispatchEvent(new CustomEvent('wbp:importApplied'));
+        document.dispatchEvent(new CustomEvent('wbp:treeBuilt'));
+      }catch(err){
+        console.error(err);
+        alert('가져오기 실패: JSON 파싱 오류');
+      }finally{
+        e.target.value = '';
+      }
+    };
+    reader.readAsText(f, 'utf-8');
+  });
+});
+</script>
 
 
 </body>
