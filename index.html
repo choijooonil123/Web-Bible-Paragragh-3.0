@@ -66,7 +66,7 @@
     .pbody{ margin-top:8px; border-top:1px dashed var(--border); padding-top:8px }
     .ptoolbar{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:8px }
 
-    /* ✅ 설교 버튼이 가려지거나 사라지는 것 방지 */
+    /* 설교 버튼이 가려지거나 사라지는 것 방지 */
     .ptoolbar .spacer { flex: 1 1 auto; }
     .ptoolbar .sermBtn { display: inline-flex; }
 
@@ -127,7 +127,7 @@
       .context-editor blockquote{color:#445066;background:#f7f9fc}
     }
 
-    /* ==== 모달 편집기(sermonEditor) 줄 간격 타이트 모드 ==== */
+    /* 모달 편집기 타이트 모드 */
     #sermonEditor.context-editor .rte{
       line-height: 1.55 !important;
       letter-spacing: 0.01em !important;
@@ -137,7 +137,7 @@
     #sermonEditor.context-editor .rte .verse-line sup{ margin-right:4px; }
     #sermonEditor.context-editor .rte br{ line-height: 1.0; }
 
-    /* ===== 모달 편집기: 본문만 스크롤 ===== */
+    /* 모달 편집기: 본문만 스크롤 */
     #sermonEditor{
       display:flex; flex-direction:column;
       height: calc(94vh - 56px); min-height: calc(94vh - 56px); max-height: calc(94vh - 56px);
@@ -161,7 +161,7 @@
       border-bottom: 1px solid var(--border);
     }
 
-    /* ===== 삽입된 성경구절 스타일 ===== */
+    /* 삽입된 성경구절 스타일 */
     .inserted-verse { font-style: italic; color: #ff8080; }
     .verse-header { margin-bottom:2px; }
     .verse-line { font-style: italic; color:#ff8080; }
@@ -179,29 +179,10 @@
       max-width:280px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
     }
     .ptoolbar .sermBtn{ margin-left:auto }
-    
+
     /* 응급: 설교 버튼 가시성 강제 */
     .ptoolbar .sermBtn { display:inline-flex !important; visibility:visible !important; opacity:1 !important; }
-    /* === 절문장 서식 툴바 === */
-    #vbar{
-      position: fixed; left:0; top:0;
-      transform: translate(-50%, calc(-100% - 10px));
-      background:#0f1320; border:1px solid var(--border);
-      border-radius:10px; padding:6px;
-      display:flex; gap:6px; align-items:center;
-      box-shadow:0 8px 20px rgba(0,0,0,.35); z-index:9999;
-    }
-    #vbar[hidden]{ display:none; }
-    #vbar .divider{ width:1px; height:20px; background:var(--border); }
-    #vbar button{
-      border:1px solid var(--border); background:#1f2533; color:var(--text);
-      padding:6px 8px; border-radius:8px; cursor:pointer; font-weight:700;
-    }
-    #vbar button:hover{ background:#273046; }
-    #vbar input[type="color"]{
-      width:28px; height:28px; padding:0; border:1px solid var(--border);
-      background:#1f2533; border-radius:6px; cursor:pointer;
-    }
+
     /* === 절문장 서식 툴바 === */
     #wbp-plbar{
       position: fixed; left:0; top:0;
@@ -232,54 +213,11 @@
       background: color-mix(in hsl, var(--accent) 25%, var(--panel) 65%);
       border-color: var(--accent);
       box-shadow: 0 0 0 2px color-mix(in hsl, var(--accent) 35%, transparent 65%) inset;
-    }
-    .ptoolbar button.filled::after{
-      content: "●";
-      font-size: 10px;
-      margin-left: 6px;
-      color: var(--titleBlue);
-      opacity: .9;
-    }
-
-    /* ==== 버튼별로 내용 채워짐(filled) 상태의 색상 구분 ==== */
-    .ptoolbar button.filled {
       color: #fff;
       border-width: 1px;
       box-shadow: 0 0 6px rgba(0,0,0,0.25);
     }
-    
-    /* 내용흐름 */
-    .ptoolbar .btnSummary.filled {
-      background: #6a5acd;            /* 보라색 */
-      border-color: #7b68ee;
-    }
-    
-    /* 단위성경속 맥락 */
-    .ptoolbar .btnUnitCtx.filled {
-      background: #9370db;            /* 연보라 */
-      border-color: #b48cf0;
-    }
-    
-    /* 전체성경속 맥락 */
-    .ptoolbar .btnWholeCtx.filled {
-      background: #4682b4;            /* 파랑 */
-      border-color: #5ca5e5;
-    }
-    
-    /* 주석 */
-    .ptoolbar .btnCommentary.filled {
-      background: #3cb371;            /* 초록 */
-      border-color: #58d68d;
-    }
-    
-    /* 설교 */
-    .ptoolbar .sermBtn.filled {
-      background: #ff8c00;            /* 주황 */
-      border-color: #ffa94d;
-    }
-    
-    /* 시각적 강조 점 */
-    .ptoolbar button.filled::after {
+    .ptoolbar button.filled::after{
       content: "●";
       font-size: 10px;
       margin-left: 6px;
@@ -287,11 +225,17 @@
       color: rgba(255,255,255,0.85);
     }
 
+    /* 버튼별 채워짐(filled) 색상 구분 */
+    .ptoolbar .btnSummary.filled    { background:#6a5acd; border-color:#7b68ee; }   /* 내용흐름-보라 */
+    .ptoolbar .btnUnitCtx.filled    { background:#9370db; border-color:#b48cf0; }   /* 단위-연보라 */
+    .ptoolbar .btnWholeCtx.filled   { background:#4682b4; border-color:#5ca5e5; }   /* 전체-파랑 */
+    .ptoolbar .btnCommentary.filled { background:#3cb371; border-color:#58d68d; }   /* 주석-초록 */
+    .ptoolbar .sermBtn.filled       { background:#ff8c00; border-color:#ffa94d; }   /* 설교-주황 */
+
     .ptoolbar button {
       transition: background 0.25s ease, border-color 0.25s ease, color 0.25s ease;
     }
-    
-</style>
+  </style>
 
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600&family=Nanum+Myeongjo&display=swap" rel="stylesheet">
 </head>
@@ -348,7 +292,7 @@
 
       <div class="list" id="sermonList"></div>
 
-      <!-- 단일 편집기 (중복 제거) -->
+      <!-- 단일 편집기 -->
       <div class="editor context-editor" id="sermonEditor" style="display:none">
         <div id="rteToolbar" class="editor-bar">
           <button type="button" onclick="execFmt('bold')"><b>B</b></button>
@@ -374,7 +318,7 @@
     </div>
   </div>
 
-  <!-- 플로팅 서식툴바: 절(.verse) 선택 시에만 표시 -->
+  <!-- 플로팅 서식툴바: 절(.pline) 선택 시에만 표시 -->
   <div id="wbp-plbar" hidden role="toolbar" aria-label="절 서식">
     <button type="button" data-cmd="bold" title="굵게 (Ctrl+B)"><b>B</b></button>
     <button type="button" data-cmd="italic" title="기울임 (Ctrl+I)"><i>I</i></button>
@@ -383,21 +327,19 @@
     <input id="wbp-plcolor" type="color" title="글자색" />
     <button type="button" data-act="clearColor" title="색 제거">⨯</button>
   </div>
-  
+
   <script>
-    /* === Paragraph .pline Floating Toolbar (Bold/Italic/Underline/Color) === */
-     /* === Floating Toolbar for verse lines ( 안정판 ) === */
+    /* ========= 플로팅 툴바 (굵게/기울임/밑줄/색상) ========= */
     (function enableVerseToolbar(){
       const bar = document.getElementById('wbp-plbar');
       const colorInp = document.getElementById('wbp-plcolor');
       if(!bar){ console.warn('[WBP] toolbar element #wbp-plbar not found'); return; }
-    
-      // 화면마다 구조가 조금씩 달라서 유연하게 매칭
-      const LINE_SELECTOR  = '.pline, p.verse, .verse-line';         // 선택 허용 라인
-      const SCOPE_SELECTOR = '.pcontent, .editor, main, body';       // contenteditable 부여 대상
-    
+
+      const LINE_SELECTOR  = '.pline, p.verse, .verse-line';
+      const SCOPE_SELECTOR = '.pcontent, .editor, main, body';
+
       let savedRange = null;
-    
+
       function findLineFromSelection(){
         const sel = window.getSelection();
         if(!sel || sel.rangeCount===0) return null;
@@ -406,7 +348,6 @@
         return el?.closest?.(LINE_SELECTOR) || null;
       }
       function ensureEditableScope(line){
-        // 라인을 감싸는 편집 가능한 컨테이너를 찾아서 없으면 부여
         const scope = line.closest(SCOPE_SELECTOR) || line.parentElement || line;
         if(scope && scope.getAttribute('contenteditable')!=='true'){
           scope.setAttribute('contenteditable','true');
@@ -445,30 +386,29 @@
         const line = findLineFromSelection();
         if(!line){ hide(); return; }
         ensureEditableScope(line);
-    
+
         const rect = getSelRect();
         if(!rect){ hide(); return; }
-    
-        // fixed 기준: viewport 좌표 그대로 사용
+
         bar.style.left = (rect.left + rect.width/2) + 'px';
         bar.style.top  = rect.top + 'px';
         bar.hidden = false;
         saveSel();
       }
       function hide(){ bar.hidden = true; }
-    
-      // 툴바 조작
+
       bar.addEventListener('mousedown', e=> e.preventDefault());
       bar.addEventListener('click', e=>{
         const btn = e.target.closest('button'); if(!btn) return;
         if(!restoreSel()) return;
-    
+
         const cmd = btn.dataset.cmd;
         const act = btn.dataset.act;
-    
+
         if(cmd){
-          document.execCommand(cmd,false,null);   // bold / italic / underline
+          document.execCommand(cmd,false,null);
           saveSel(); showBarIfLine();
+          setTimeout(saveCurrentLineFormatting, 0);
           return;
         }
         if(act==='clearColor'){
@@ -486,23 +426,23 @@
             document.execCommand('insertHTML', false, div.innerHTML || div.textContent || '');
           }catch(_){}
           saveSel(); showBarIfLine();
+          setTimeout(saveCurrentLineFormatting, 0);
         }
       });
-    
+
       colorInp?.addEventListener('input', ()=>{
         if(!restoreSel()) return;
         document.execCommand('foreColor', false, colorInp.value);
         saveSel(); showBarIfLine();
+        setTimeout(saveCurrentLineFormatting, 0);
       });
-    
-      // 선택 변화에 반응 — 드래그/키입력/마우스업 모두 커버
+
       document.addEventListener('selectionchange', ()=> setTimeout(showBarIfLine, 0));
       document.addEventListener('mouseup',         ()=> setTimeout(showBarIfLine, 0));
       document.addEventListener('keyup',           ()=> setTimeout(showBarIfLine, 0));
       window.addEventListener('scroll', hide, {passive:true});
       window.addEventListener('resize', hide);
-    
-      // 단축키(Ctrl/Cmd + B/I/U) — 라인 내부에서만 작동
+
       window.addEventListener('keydown', (e)=>{
         if(!(e.ctrlKey||e.metaKey)) return;
         const k = e.key.toLowerCase();
@@ -512,9 +452,9 @@
         e.preventDefault();
         document.execCommand(k==='b'?'bold':k==='i'?'italic':'underline', false, null);
         setTimeout(showBarIfLine, 0);
+        setTimeout(saveCurrentLineFormatting, 0);
       });
-    
-      // 디버그 강제 표시(옵션): Alt+K -> 현재 선택에서 강제 표시
+
       window.addEventListener('keydown', (e)=>{
         if(e.altKey && e.key.toLowerCase()==='k'){
           setTimeout(showBarIfLine, 0);
@@ -522,28 +462,13 @@
       });
     })();
 
-  </script>
-
-
-
-  <script>
-    /* ========= [WBP v3 Filled-State Patch] =========
-       - 각 단락 툴바의 버튼(내용흐름/단위/전체/주석/설교)에
-         해당 데이터가 존재하면 .filled 클래스를 추가해 색상 변경
-       - 기존 코드 삭제/수정 없이 하단에 붙여 쓰는 안정형 패치
-    ================================================= */
-    
-    /** 안전 접근 유틸 */
+    /* ========= 버튼 filled-state (요약/단위/전체/주석/설교) ========= */
     function WBP_safe(fn, fallback){ try{ return fn(); }catch(_){ return fallback; } }
-    
-    /** paraId 계산: `${book}|${chap}|${ref}` */
     function WBP_paraId(book, chap, paraIdx){
       const para = WBP_safe(()=>BIBLE.books[book][chap].paras[paraIdx], null);
       if(!para) return null;
       return `${book}|${chap}|${para.ref}`;
     }
-    
-    /** 단락 엘리먼트에서 book/chap/idx 파싱 */
     function WBP_pickMetaFromParaEl(paraEl){
       const t = paraEl.querySelector('summary .ptitle');
       if(!t) return null;
@@ -553,8 +478,6 @@
       if(!book || !Number.isFinite(chap) || !Number.isFinite(idx)) return null;
       return {book, chap, idx};
     }
-    
-    /** 저장된 문서/설교 유무 확인 */
     function WBP_hasDoc(map, pid){
       const doc = (map||{})[pid];
       if(!doc) return false;
@@ -570,75 +493,57 @@
         return !!(title || body);
       });
     }
-    
-    /** 단락 하나에 대해 버튼 상태 적용 */
     function WBP_applyFilledToParaEl(paraEl){
       const meta = WBP_pickMetaFromParaEl(paraEl);
       if(!meta) return;
-    
       const pid = WBP_paraId(meta.book, meta.chap, meta.idx);
       if(!pid) return;
-    
-      // 저장 맵 읽기
+
       const sermonMap = WBP_safe(()=>JSON.parse(localStorage.getItem(STORAGE_SERMON)||'{}'), {});
       const unitMap   = WBP_safe(()=>JSON.parse(localStorage.getItem(STORAGE_UNIT_CTX)||'{}'), {});
       const wholeMap  = WBP_safe(()=>JSON.parse(localStorage.getItem(STORAGE_WHOLE_CTX)||'{}'), {});
       const commMap   = WBP_safe(()=>JSON.parse(localStorage.getItem(STORAGE_COMMENTARY)||'{}'), {});
       const sumMap    = WBP_safe(()=>JSON.parse(localStorage.getItem(STORAGE_SUMMARY)||'{}'), {});
-    
-      // 상태
+
       const hasSummary    = WBP_hasDoc(sumMap,  pid);
       const hasUnit       = WBP_hasDoc(unitMap, pid);
       const hasWhole      = WBP_hasDoc(wholeMap,pid);
       const hasCommentary = WBP_hasDoc(commMap, pid);
       const hasSermon     = WBP_hasSermon(sermonMap, pid);
-    
-      // 버튼에 .filled 토글
+
       const tb = paraEl.querySelector('.ptoolbar');
       if(!tb) return;
-    
+
       const btnSummary    = tb.querySelector('.btnSummary');
       const btnUnitCtx    = tb.querySelector('.btnUnitCtx');
       const btnWholeCtx   = tb.querySelector('.btnWholeCtx');
       const btnCommentary = tb.querySelector('.btnCommentary');
       const btnSermon     = tb.querySelector('.sermBtn');
-    
+
       if(btnSummary)    btnSummary.classList.toggle('filled',    !!hasSummary);
       if(btnUnitCtx)    btnUnitCtx.classList.toggle('filled',    !!hasUnit);
       if(btnWholeCtx)   btnWholeCtx.classList.toggle('filled',   !!hasWhole);
       if(btnCommentary) btnCommentary.classList.toggle('filled', !!hasCommentary);
       if(btnSermon)     btnSermon.classList.toggle('filled',     !!hasSermon);
     }
-    
-    /** 화면 전체 스윕 */
     function WBP_sweepAll(){
       document.querySelectorAll('#tree details.para').forEach(WBP_applyFilledToParaEl);
     }
-    
-    /** buildTree 이후/토글 시 반영: MutationObserver */
     (function(){
       const root = document.getElementById('tree');
       if(!root) return;
-      // 최초 한 번
       setTimeout(WBP_sweepAll, 200);
-    
-      // 구조 변동 시 자동 반영
       const mo = new MutationObserver(()=> WBP_sweepAll());
       mo.observe(root, {subtree:true, childList:true});
     })();
-    
-    /** 저장 함수 래핑: setSermonMap / setDocMap 호출 후 상태 갱신 */
     (function wrapSavers(){
       const _setSermonMap = window.setSermonMap;
       const _setDocMap    = window.setDocMap;
-    
       if(typeof _setSermonMap === 'function'){
         window.setSermonMap = function(o){
           const r = _setSermonMap.call(this, o);
-          // 현재 열린 단락 우선 갱신
           const openPara = document.querySelector('#tree details.para[open]') || null;
           if(openPara) WBP_applyFilledToParaEl(openPara);
-          // 전체도 안전하게 갱신
           setTimeout(WBP_sweepAll, 0);
           return r;
         }
@@ -653,30 +558,17 @@
         }
       }
     })();
-    
-    /** 단락 열릴 때도 즉시 반영 (토글 이벤트 위임) */
     document.getElementById('tree')?.addEventListener('toggle', (e)=>{
       const para = e.target?.closest?.('details.para');
       if(para && para.open){ WBP_applyFilledToParaEl(para); }
     }, true);
-    
-    /** 수동 새로고침 핫키(옵션): Alt+L */
     window.addEventListener('keydown', (e)=>{
       if(e.altKey && e.key.toLowerCase()==='l'){ WBP_sweepAll(); }
     });
 
-    /* ===========================================================
-       Web-Bible-Paragraph 3.0 — 절(verse line) 서식 영구 보존 모듈
-       - 기존 코드 절대 삭제하지 않고, 맨 아래에 '추가'만 해도 동작
-       - 기능:
-         1) 플로팅 툴바로 적용한 서식을 localStorage에 저장
-         2) 새로 렌더된 절에 저장된 서식을 자동 복원
-       =========================================================== */
-    
-    /* 저장 키 */
+    /* ========= 절 서식 영구 보존 ========= */
     const STORAGE_VERSE_FMT = 'wbps.versefmt.v1';
-    
-    /* 저장 map 유틸 */
+
     function getVerseFmtMap(){
       try{ return JSON.parse(localStorage.getItem(STORAGE_VERSE_FMT) || '{}'); }
       catch{ return {}; }
@@ -684,36 +576,22 @@
     function setVerseFmtMap(obj){
       localStorage.setItem(STORAGE_VERSE_FMT, JSON.stringify(obj));
     }
-    
-    /* 현재 절(.pline) → 고유키 계산
-       key 형식:  `${book}|${chap}|${ref}|v${verse}`
-       - book/chap/ref 는 summary .ptitle dataset과 BIBLE로 얻음
-       - verse는 .pline.dataset.verse */
     function keyForPline(plineEl){
       try{
         const paraEl = plineEl.closest('details.para');
         if(!paraEl) return null;
-    
         const t = paraEl.querySelector('summary .ptitle');
         if(!t) return null;
-    
         const book = t.dataset.book;
         const chap = parseInt(t.dataset.ch, 10);
         const idx  = parseInt(t.dataset.idx, 10);
-    
         const para = (window.BIBLE?.books?.[book]?.[chap]?.paras || [])[idx];
         if(!para) return null;
-    
         const v = plineEl.dataset.verse;
         if(!v) return null;
-    
         return `${book}|${chap}|${para.ref}|v${v}`;
-      }catch(_){
-        return null;
-      }
+      }catch(_){ return null; }
     }
-    
-    /* ✅ 1) 서식 저장: 현재 선택된 절 라인의 innerHTML 저장 */
     function saveCurrentLineFormatting(){
       const sel = window.getSelection?.();
       if(!sel || !sel.rangeCount) return;
@@ -721,36 +599,22 @@
       const el = (n.nodeType === 1 ? n : n.parentElement);
       const line = el?.closest?.('.pline, .verse-line, p.verse');
       if(!line) return;
-    
       const key = keyForPline(line);
       if(!key) return;
-    
       const map = getVerseFmtMap();
-      map[key] = line.innerHTML;  // 서식 포함 그대로 저장
+      map[key] = line.innerHTML;
       setVerseFmtMap(map);
     }
-    
-    /* ✅ 2) 서식 복원: 라인이 생성되면 저장값으로 덮어쓰기 */
     function restoreLineFormatting(line){
       const key = keyForPline(line);
       if(!key) return;
       const map = getVerseFmtMap();
-      if(map[key]){
-        // 안전하게 <sup> 번호를 보존하고 싶다면 아래 로직으로 혼합 가능.
-        // 지금은 저장된 innerHTML로 완전 덮어쓰기 (가장 간단/안정)
-        line.innerHTML = map[key];
-      }
+      if(map[key]){ line.innerHTML = map[key]; }
     }
-    
-    /* ✅ 3) #tree 영역에 절이 추가될 때 자동 복원 (비침투형) */
     (function watchTreeForNewLines(){
       const root = document.getElementById('tree');
       if(!root) return;
-    
-      // 초기 스윕
       root.querySelectorAll('.pline, .verse-line, p.verse').forEach(restoreLineFormatting);
-    
-      // 이후 동적 추가 감시
       const mo = new MutationObserver((muts)=>{
         for(const m of muts){
           m.addedNodes?.forEach?.(node=>{
@@ -758,70 +622,32 @@
             if(node.matches?.('.pline, .verse-line, p.verse')){
               restoreLineFormatting(node);
             }
-            // 자식 쪽에 생긴 경우까지 커버
             node.querySelectorAll?.('.pline, .verse-line, p.verse')?.forEach?.(restoreLineFormatting);
           });
         }
       });
       mo.observe(root, {subtree:true, childList:true});
     })();
-    
-    /* ✅ 4) 플로팅 툴바 동작과 키입력에 저장 훅 연결
-       - 이미 올려두신 플로팅바(#wbp-plbar)와 execCommand를 그대로 사용하면서
-         "적용 직후"에 saveCurrentLineFormatting()만 호출해 주면 됨.
-       - 기존 툴바 코드가 위쪽에 있으므로, 여기에 '보조 리스너'만 둬도 동작합니다. */
     (function hookToolbarSaves(){
       const bar = document.getElementById('wbp-plbar');
       const color = document.getElementById('wbp-plcolor');
-    
-      // 툴바 버튼 클릭 후 저장
       if(bar){
         bar.addEventListener('click', (e)=>{
           const btn = e.target.closest('button');
           if(!btn) return;
-          // 기존 execCommand는 당신의 코드에서 이미 실행됨
-          // 여기서는 '적용 직후 저장'만 추가
           setTimeout(saveCurrentLineFormatting, 0);
         });
       }
-      // 색상 즉시 반영 후 저장
       if(color){
         color.addEventListener('input', ()=>{
           setTimeout(saveCurrentLineFormatting, 0);
         });
       }
-    
-      // 사용자가 키보드로 직접 지우거나 붙여넣기 해도 저장
-      // (선택 영역이 있는 상태에서만 의미가 있으므로, 약하게 후처리)
-      document.addEventListener('keyup', ()=>{
-        // 플로팅바 사용 없이 수동 편집했을 때도 보존
-        setTimeout(saveCurrentLineFormatting, 0);
-      });
-      document.addEventListener('mouseup', ()=>{
-        setTimeout(saveCurrentLineFormatting, 0);
-      });
+      document.addEventListener('keyup',  ()=> setTimeout(saveCurrentLineFormatting, 0));
+      document.addEventListener('mouseup',()=> setTimeout(saveCurrentLineFormatting, 0));
     })();
 
-      /* ===========================================================
-       Web-Bible-Paragraph 3.0 — 특정 단락 서식 초기화 버튼
-       - 각 단락(details.para)의 툴바에 “서식 초기화” 버튼 자동 추가
-       - 클릭 시: 해당 단락 내 절들의 LocalStorage(wbps.versefmt.v1)
-         저장 항목 제거 + 원문 텍스트로 복원
-       =========================================================== */
-    
-    /* 절 서식 저장 키 */
-    const STORAGE_VERSE_FMT = 'wbps.versefmt.v1';
-    
-    /* 유틸 */
-    function getVerseFmtMap(){
-      try{ return JSON.parse(localStorage.getItem(STORAGE_VERSE_FMT) || '{}'); }
-      catch{ return {}; }
-    }
-    function setVerseFmtMap(obj){
-      localStorage.setItem(STORAGE_VERSE_FMT, JSON.stringify(obj));
-    }
-    
-    /* para element → book/chap/idx 추출 */
+    /* ========= 특정 단락 서식 초기화 버튼 주입 ========= */
     function metaFromParaEl(paraEl){
       const t = paraEl.querySelector('summary .ptitle');
       if(!t) return null;
@@ -831,18 +657,13 @@
       if(!book || !Number.isFinite(chap) || !Number.isFinite(idx)) return null;
       return {book,chap,idx};
     }
-    
-    /* 단락 전체 서식 초기화 로직 */
     function clearFormattingForPara(paraEl){
       const meta = metaFromParaEl(paraEl);
       if(!meta) return alert('단락 정보를 찾을 수 없습니다.');
-    
       const para = window.BIBLE?.books?.[meta.book]?.[meta.chap]?.paras?.[meta.idx];
       if(!para) return alert('성경 본문 데이터가 없습니다.');
-    
+
       const prefix = `${meta.book}|${meta.chap}|${para.ref}|`;
-    
-      // LocalStorage map 정리
       const map = getVerseFmtMap();
       const newMap = {};
       let count = 0;
@@ -851,25 +672,19 @@
         newMap[k]=v;
       }
       setVerseFmtMap(newMap);
-    
-      // DOM에서 해당 절 라인 복원
+
       paraEl.querySelectorAll('.pline, .verse-line, p.verse').forEach(line=>{
         const textOnly = line.textContent.trim();
-        if(textOnly){
-          // sup절번호 보존 시 다음처럼 약간 수정 가능
-          line.innerHTML = textOnly;
-        }
+        if(textOnly){ line.innerHTML = textOnly; }
       });
-    
+
       alert(`'${meta.book} ${meta.chap}장 (${para.ref})' 단락의 서식 ${count}개를 초기화했습니다.`);
     }
-    
-    /* 각 단락 툴바에 버튼 자동 추가 */
     (function injectClearBtn(){
       const root = document.getElementById('tree');
       if(!root) return;
       const addBtn = (tb, paraEl)=>{
-        if(tb.querySelector('.btnClearFmt')) return; // 중복방지
+        if(tb.querySelector('.btnClearFmt')) return;
         const btn = document.createElement('button');
         btn.className = 'btnClearFmt';
         btn.textContent = '서식초기화';
@@ -881,14 +696,10 @@
         btn.addEventListener('click', ()=> clearFormattingForPara(paraEl));
         tb.appendChild(btn);
       };
-    
-      // 초기 스윕
       root.querySelectorAll('details.para').forEach(paraEl=>{
         const tb = paraEl.querySelector('.ptoolbar');
         if(tb) addBtn(tb, paraEl);
       });
-    
-      // 이후 새 단락이 추가될 때도 자동 삽입
       const mo = new MutationObserver((muts)=>{
         for(const m of muts){
           m.addedNodes?.forEach?.(n=>{
@@ -901,9 +712,10 @@
       });
       mo.observe(root, {subtree:true, childList:true});
     })();
-    </script>
+  </script>
 
+  <!-- 기존 앱 스크립트는 마지막에 둡니다 (defer) -->
   <script src="app.js" defer></script>
-  
+
 </body>
 </html>
