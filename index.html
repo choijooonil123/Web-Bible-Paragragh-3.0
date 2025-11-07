@@ -714,6 +714,149 @@
     })();
   </script>
 
+  <script>
+    /* ====== WBP Verse Formatting — Persist & Force-Restore Patch (stable) ====== */
+    /* 0) 안전 유틸 */
+    const __WBP = {
+      q(sel, root=document){ return root.querySelector(sel); },
+      qa(sel, root=document){ return Array.from(root.querySelectorAll(sel)); },
+      safe(fn, fb){ try{ return fn(); }catch{ return fb; } },
+    };
+    
+    /* 1) 저장소 접근 (기존 키와 호환 유지) */
+    const STORAGE_VERSE_FMT = 'wbps.versefmt.v1';
+    function getVerseFmtMap(){
+      return __WBP.safe(()=>JSON.parse(localStorage.getItem(STORAGE_VERSE_FMT)||'{}'),{});
+    }
+    function setVerseFmtMap(obj){
+      localStorage.setItem(STORAGE_VERSE_FMT, JSON.stringify(obj));
+    }
+    
+    /* 2) 고유키 계산: data-verse 없으면 인덱스 fallback */
+    function keyForPlineRobust(plineEl){
+      try{
+        const paraEl = plineEl.closest('details.para'); if(!paraEl) return null;
+        const t = paraEl.querySelector('summary .ptitle'); if(!t) return null;
+    
+        const book = t.dataset.book;
+        const chap = parseInt(t.dataset.ch, 10);
+        const idx  = parseInt(t.dataset.idx, 10);
+        const para = window.BIBLE?.books?.[book]?.[chap]?.paras?.[idx];
+        if(!para) return null;
+    
+        // 우선 절번호
+        const v = plineEl.dataset.verse;
+        if (v) return `${book}|${chap}|${para.ref}|v${v}`;
+    
+        // 절번호가 없으면, 같은 단락 내 라인 인덱스로 fallback
+        const lines = Array.from(paraEl.querySelectorAll('.pline, .verse-line, p.verse'));
+        const pos = Math.max(0, lines.indexOf(plineEl));
+        return `${book}|${chap}|${para.ref}|i${pos}`;
+      }catch{ return null; }
+    }
+    
+    /* 3) 저장 훅 (툴바/키입력 직후) */
+    function saveCurrentLineFormatting(){
+      const sel = window.getSelection?.();
+      if(!sel || !sel.rangeCount) return;
+      const n = sel.getRangeAt(0).commonAncestorContainer;
+      const el = (n.nodeType === 1 ? n : n.parentElement);
+      const line = el?.closest?.('.pline, .verse-line, p.verse');
+      if(!line) return;
+    
+      const key = keyForPlineRobust(line);
+      if(!key) return;
+    
+      const map = getVerseFmtMap();
+      map[key] = line.innerHTML;  // 서식 포함 저장
+      setVerseFmtMap(map);
+    }
+    
+    /* 4) 복원 로직 */
+    function restoreLineFormatting(line){
+      const key = keyForPlineRobust(line);
+      if(!key) return;
+      const map = getVerseFmtMap();
+      if(map[key]){
+        line.innerHTML = map[key];
+      }
+    }
+    
+    /* 5) 강제 복원 스윕(초기 + 동적) */
+    (function forceRestoreBootStrap(){
+      const root = document.getElementById('tree');
+      if(!root) return;
+    
+      const LINE_SEL = '.pline, .verse-line, p.verse';
+    
+      // (A) 페이지 초기에 렌더가 늦게 오는 경우 대비: 3초간 폴링
+      let tries = 0;
+      const maxTries = 12; // 12 * 250ms = 3s
+      const timer = setInterval(()=>{
+        tries++;
+        __WBP.qa(LINE_SEL, root).forEach(restoreLineFormatting);
+        if(tries >= maxTries) clearInterval(timer);
+      }, 250);
+    
+      // (B) MutationObserver: buildTree/토글/가져오기 후에도 자동 복원
+      const mo = new MutationObserver(muts=>{
+        for(const m of muts){
+          m.addedNodes?.forEach?.(node=>{
+            if(!(node instanceof HTMLElement)) return;
+            if(node.matches?.(LINE_SEL)) restoreLineFormatting(node);
+            node.querySelectorAll?.(LINE_SEL)?.forEach?.(restoreLineFormatting);
+          });
+        }
+      });
+      mo.observe(root, {subtree:true, childList:true});
+    
+      // (C) details 토글 시점에도 복원
+      root.addEventListener('toggle', e=>{
+        const para = e.target?.closest?.('details.para');
+        if(para && para.open){
+          __WBP.qa(LINE_SEL, para).forEach(restoreLineFormatting);
+        }
+      }, true);
+    
+      // (D) 창 복귀/포커스 시 한 번 더 복원 (앱에 따라 재랜더링이 들어올 수 있음)
+      window.addEventListener('focus', ()=>{
+        __WBP.qa(LINE_SEL, root).forEach(restoreLineFormatting);
+      });
+    })();
+    
+    /* 6) 툴바/입력 이벤트에 저장 연결(이미 있으나 확실히 한 번 더) */
+    (function wireSaves(){
+      const bar   = document.getElementById('wbp-plbar');
+      const color = document.getElementById('wbp-plcolor');
+    
+      bar?.addEventListener('click', e=>{
+        if(e.target.closest('button')) setTimeout(saveCurrentLineFormatting, 0);
+      });
+      color?.addEventListener('input', ()=>{
+        setTimeout(saveCurrentLineFormatting, 0);
+      });
+    
+      // 수동 편집/붙여넣기 등도 커버
+      document.addEventListener('keyup',  ()=> setTimeout(saveCurrentLineFormatting, 0));
+      document.addEventListener('mouseup',()=> setTimeout(saveCurrentLineFormatting, 0));
+    })();
+    
+    /* 7) (선택) 저장 호출 최소 간격 제한: 잦은 저장을 줄이고 싶으면 주석 해제
+    (function throttleSaves(interval = 400){
+      const orig = window.saveCurrentLineFormatting;
+      if (typeof orig !== 'function') return;
+      let last = 0, pending = null;
+      window.saveCurrentLineFormatting = function(){
+        const now = Date.now(), el = now - last;
+        if(el >= interval){ last = now; orig(); }
+        else { clearTimeout(pending);
+               pending = setTimeout(()=>{ last = Date.now(); orig(); }, interval - el); }
+      }
+    })(400);
+    */
+    </script>
+
+
   <!-- 기존 앱 스크립트는 마지막에 둡니다 (defer) -->
   <script src="app.js" defer></script>
 
