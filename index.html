@@ -235,6 +235,18 @@
     .ptoolbar button {
       transition: background 0.25s ease, border-color 0.25s ease, color 0.25s ease;
     }
+
+    /* 색상 스와치 버튼 */
+    #wbp-plbar .color-swatch{
+      width:22px; height:22px; border-radius:6px; border:1px solid var(--border, #252a36);
+      display:inline-block; cursor:pointer; outline:none;
+    }
+    #wbp-plbar .color-swatch:focus{ box-shadow:0 0 0 2px rgba(255,255,255,.15) inset; }
+    #wbp-plbar select{
+      height:28px; border-radius:6px; border:1px solid var(--border, #252a36);
+      background:#1f2533; color:#e6e8ef; padding:0 6px; cursor:pointer;
+    }
+
   </style>
 
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600&family=Nanum+Myeongjo&display=swap" rel="stylesheet">
@@ -319,12 +331,36 @@
   </div>
 
   <!-- 플로팅 서식툴바: 절(.pline) 선택 시에만 표시 -->
+  <!-- 플로팅 서식툴바: 절(.verse) 선택 시에만 표시 -->
   <div id="wbp-plbar" hidden role="toolbar" aria-label="절 서식">
     <button type="button" data-cmd="bold" title="굵게 (Ctrl+B)"><b>B</b></button>
     <button type="button" data-cmd="italic" title="기울임 (Ctrl+I)"><i>I</i></button>
     <button type="button" data-cmd="underline" title="밑줄 (Ctrl+U)"><u>U</u></button>
+  
     <div class="divider"></div>
-    <input id="wbp-plcolor" type="color" title="글자색" />
+  
+    <!-- 6가지 고정 색상 스와치 -->
+    <button type="button" class="color-swatch" style="background:#e03131" data-color="#e03131" title="빨강"></button>
+    <button type="button" class="color-swatch" style="background:#f08c00" data-color="#f08c00" title="주황"></button>
+    <button type="button" class="color-swatch" style="background:#fab005" data-color="#fab005" title="노랑"></button>
+    <button type="button" class="color-swatch" style="background:#2f9e44" data-color="#2f9e44" title="초록"></button>
+    <button type="button" class="color-swatch" style="background:#1971c2" data-color="#1971c2" title="파랑"></button>
+    <button type="button" class="color-swatch" style="background:#7048e8" data-color="#7048e8" title="보라"></button>
+  
+    <!-- 기타 색상: 드롭다운 -->
+    <select id="wbp-color-dd" aria-label="기타 색상">
+      <option value="">색 더보기…</option>
+      <option value="#e8590c">오렌지</option>
+      <option value="#e67700">앰버</option>
+      <option value="#5c940d">라임그린</option>
+      <option value="#0ca678">티얼</option>
+      <option value="#1098ad">청록</option>
+      <option value="#4263eb">인디고</option>
+      <option value="#d6336c">딥핑크</option>
+      <option value="#adb5bd">회색</option>
+      <option value="clear">색 제거</option>
+    </select>
+  
     <button type="button" data-act="clearColor" title="색 제거">⨯</button>
   </div>
 
