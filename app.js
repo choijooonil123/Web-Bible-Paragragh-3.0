@@ -376,6 +376,8 @@ function buildTree(){
     detBook.appendChild(chWrap);
     treeEl.appendChild(detBook);
   }
+    // ✅ 바로 여기에 한 줄 추가합니다 👇👇👇
+  document.dispatchEvent(new CustomEvent('wbp:treeBuilt'));
 }
 
 // [PATCH 2 START] 렌더 후에도 설교 버튼 누락 시 자동 보정(클릭 바인딩 없음)
