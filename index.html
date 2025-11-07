@@ -664,9 +664,7 @@
     window.addEventListener('keydown', (e)=>{
       if(e.altKey && e.key.toLowerCase()==='l'){ WBP_sweepAll(); }
     });
-    </script>
 
-    <script>
     /* ===========================================================
        Web-Bible-Paragraph 3.0 — 절(verse line) 서식 영구 보존 모듈
        - 기존 코드 절대 삭제하지 않고, 맨 아래에 '추가'만 해도 동작
@@ -803,10 +801,8 @@
         setTimeout(saveCurrentLineFormatting, 0);
       });
     })();
-    </script>
 
-    <script>
-    /* ===========================================================
+      /* ===========================================================
        Web-Bible-Paragraph 3.0 — 특정 단락 서식 초기화 버튼
        - 각 단락(details.para)의 툴바에 “서식 초기화” 버튼 자동 추가
        - 클릭 시: 해당 단락 내 절들의 LocalStorage(wbps.versefmt.v1)
@@ -906,8 +902,6 @@
       mo.observe(root, {subtree:true, childList:true});
     })();
     </script>
-
-
   
 </body>
 </html>
