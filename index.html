@@ -958,9 +958,134 @@
     */
     </script>
 
-
   <!-- 기존 앱 스크립트는 마지막에 둡니다 (defer) -->
   <script src="app.js" defer></script>
+
+  <script>
+    /* ====== WBP v3: 절문장 서식 저장/복원 안정 패치 (하단에 1번만 삽입) ====== */
+    
+    /* 0) 전역 키/함수 보장 (중복 방지) */
+    window.WBP_FMT_KEY = window.WBP_FMT_KEY || 'wbps.versefmt.v1';
+    window.WBP_FMT     = window.WBP_FMT || {
+      get(){ try{ return JSON.parse(localStorage.getItem(window.WBP_FMT_KEY)||'{}'); }catch{ return {}; } },
+      set(o){ localStorage.setItem(window.WBP_FMT_KEY, JSON.stringify(o)); }
+    };
+    
+    /* 1) 각 절(.pline / .verse-line / p.verse)에 data-verse 자동 보정
+          - <sup class="pv">3</sup> 같은 절번호가 있으면 그걸 사용
+          - 그래도 없으면 “라인 인덱스”로 대체키 생성 */
+    function ensureVerseKeys(root=document){
+      root.querySelectorAll('.pline, .verse-line, p.verse').forEach((line, i)=>{
+        if(line.dataset.verse) return;
+        // 1) sup 안 숫자 찾기
+        const sup = line.querySelector('sup, .pv');
+        const n1  = sup ? String((sup.textContent||'').trim().match(/^\d+/)?.[0]||'') : '';
+        if(n1){ line.dataset.verse = n1; return; }
+        // 2) 텍스트 맨 앞 숫자
+        const txt = (line.textContent||'').trim();
+        const n2  = String(txt.match(/^\d+/)?.[0]||'');
+        if(n2){ line.dataset.verse = n2; return; }
+        // 3) 최후: 인덱스 기반
+        line.dataset.verse = 'idx' + i;
+      });
+    }
+    
+    /* 2) 단락 메타 추출 */
+    function metaFromParaEl(paraEl){
+      const t = paraEl?.querySelector?.('summary .ptitle');
+      if(!t) return null;
+      const book = t.dataset.book;
+      const chap = parseInt(t.dataset.ch,10);
+      const idx  = parseInt(t.dataset.idx,10);
+      if(!book || !Number.isFinite(chap) || !Number.isFinite(idx)) return null;
+      // ref는 BIBLE에서 다시 조회
+      const para = window.BIBLE?.books?.[book]?.[chap]?.paras?.[idx];
+      if(!para) return null;
+      return {book, chap, idx, ref: para.ref};
+    }
+    
+    /* 3) 절 라인 → 고유키 */
+    function keyForPline(plineEl){
+      try{
+        const paraEl = plineEl.closest('details.para');
+        if(!paraEl) return null;
+        const meta = metaFromParaEl(paraEl);
+        if(!meta) return null;
+        const v = plineEl.dataset.verse || '';
+        if(!v) return null;
+        return `${meta.book}|${meta.chap}|${meta.ref}|v${v}`;
+      }catch{ return null; }
+    }
+    
+    /* 4) 저장: 현재 선택이 걸린 라인의 innerHTML 그대로 저장 */
+    window.saveCurrentLineFormatting = function(){
+      const sel = window.getSelection?.();
+      if(!sel || !sel.rangeCount) return;
+      const n   = sel.getRangeAt(0).commonAncestorContainer;
+      const el  = (n.nodeType===1 ? n : n.parentElement);
+      const line= el?.closest?.('.pline, .verse-line, p.verse');
+      if(!line) return;
+      const key = keyForPline(line);
+      if(!key) return;              // ← 여기서 null이면 저장이 안 됨(이번 패치로 예방)
+      const m = window.WBP_FMT.get();
+      m[key]  = line.innerHTML;     // 서식 포함 저장
+      window.WBP_FMT.set(m);
+    };
+    
+    /* 5) 복원: 라인이 생기면 저장본으로 덮기 */
+    function restoreLineFormatting(line){
+      const key = keyForPline(line);
+      if(!key) return;
+      const m = window.WBP_FMT.get();
+      if(m[key]) line.innerHTML = m[key];
+    }
+    
+    /* 6) 초기 스윕 + MutationObserver (buildTree 이후 자동 복원) */
+    (function initRestore(){
+      const root = document.getElementById('tree') || document;
+      // 첫 보정/복원
+      ensureVerseKeys(root);
+      root.querySelectorAll('.pline, .verse-line, p.verse').forEach(restoreLineFormatting);
+      // 이후 동적 추가 감시
+      const mo = new MutationObserver(muts=>{
+        for(const mu of muts){
+          mu.addedNodes?.forEach?.(node=>{
+            if(!(node instanceof HTMLElement)) return;
+            ensureVerseKeys(node);
+            if(node.matches?.('.pline, .verse-line, p.verse')) restoreLineFormatting(node);
+            node.querySelectorAll?.('.pline, .verse-line, p.verse')?.forEach?.(restoreLineFormatting);
+          });
+        }
+      });
+      mo.observe(root, {subtree:true, childList:true});
+    })();
+    
+    /* 7) 플로팅툴바/편집 입력 후 “즉시 저장 훅” (툴바 코드와 자연 결합) */
+    (function hookSaves(){
+      const bar = document.getElementById('wbp-plbar');
+      // 굵게/기울임/밑줄/스와치/드롭다운/색제거 버튼 클릭 뒤 저장
+      bar?.addEventListener('click', ()=> setTimeout(window.saveCurrentLineFormatting, 0));
+      // 색 드롭다운(있다면) 변경 뒤 저장
+      document.getElementById('wbp-color-dd')?.addEventListener('change', ()=>{
+        setTimeout(window.saveCurrentLineFormatting, 0);
+      });
+      // 사용자가 직접 타이핑/붙여넣기/마우스 조작 후 저장
+      const tree = document.getElementById('tree') || document;
+      tree.addEventListener('input',   ()=> setTimeout(window.saveCurrentLineFormatting, 0), true);
+      tree.addEventListener('keyup',   ()=> setTimeout(window.saveCurrentLineFormatting, 0), true);
+      tree.addEventListener('mouseup', ()=> setTimeout(window.saveCurrentLineFormatting, 0), true);
+    })();
+    
+    /* 8) 단락 전체 초기화 버튼이 있다면, data-verse 보정도 같이 수행 */
+    (function patchClearBtnSideEffect(){
+      document.getElementById('tree')?.addEventListener('click', (e)=>{
+        const btn = e.target.closest('.btnClearFmt');
+        if(!btn) return;
+        const para = btn.closest('details.para');
+        setTimeout(()=> ensureVerseKeys(para||document), 0);
+      });
+    })();
+  </script>
 
 </body>
 </html>
