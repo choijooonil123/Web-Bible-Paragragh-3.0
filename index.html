@@ -65,10 +65,7 @@
 
     .pbody{ margin-top:8px; border-top:1px dashed var(--border); padding-top:8px }
     .ptoolbar{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:8px }
-
-    /* 설교 버튼이 가려지거나 사라지는 것 방지 */
     .ptoolbar .spacer { flex: 1 1 auto; }
-    .ptoolbar .sermBtn { display: inline-flex; }
 
     .pline{ padding:4px 6px; border-left:3px solid transparent; border-radius:8px; transition: background .15s, border-color .15s }
     .pline:hover{ background:color-mix(in hsl, var(--panel) 80%, black 12%) }
@@ -92,7 +89,6 @@
     .editor-bar{ display:flex; gap:8px; align-items:center; flex-wrap:wrap }
     .editor-bar .grow{ flex:1 1 auto }
 
-    /* [맥락 편집기 전용] 보기 좋은 타이포/레이아웃 */
     .context-editor {
       font-family: "Noto Serif KR", "Nanum Myeongjo", serif;
       font-size: 1.05rem;
@@ -127,7 +123,6 @@
       .context-editor blockquote{color:#445066;background:#f7f9fc}
     }
 
-    /* 모달 편집기 타이트 모드 */
     #sermonEditor.context-editor .rte{
       line-height: 1.55 !important;
       letter-spacing: 0.01em !important;
@@ -137,7 +132,6 @@
     #sermonEditor.context-editor .rte .verse-line sup{ margin-right:4px; }
     #sermonEditor.context-editor .rte br{ line-height: 1.0; }
 
-    /* 모달 편집기: 본문만 스크롤 */
     #sermonEditor{
       display:flex; flex-direction:column;
       height: calc(94vh - 56px); min-height: calc(94vh - 56px); max-height: calc(94vh - 56px);
@@ -152,7 +146,6 @@
       scroll-padding-top: var(--editor-pad-top, 0px);
     }
 
-    /* RTE 툴바 고정 */
     #rteToolbar {
       position: sticky;
       top: 0;
@@ -161,15 +154,11 @@
       border-bottom: 1px solid var(--border);
     }
 
-    /* 삽입된 성경구절 스타일 */
     .inserted-verse { font-style: italic; color: #ff8080; }
     .verse-header { margin-bottom:2px; }
     .verse-line { font-style: italic; color:#ff8080; }
 
-    /* 설교목록 링크 필드 */
-    .link-box{
-      display:flex; align-items:center; gap:6px; min-width:260px; flex:1 1 320px;
-    }
+    .link-box{ display:flex; align-items:center; gap:6px; min-width:260px; flex:1 1 320px; }
     .link-box input{
       flex:1 1 auto; min-width:200px;
       background:#161922;color:#e6e8ef;border:1px solid #2a3040;border-radius:8px;padding:6px 8px
@@ -178,75 +167,40 @@
       text-decoration:underline; color:#9fd0ff; word-break:break-all;
       max-width:280px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
     }
-    .ptoolbar .sermBtn{ margin-left:auto }
 
-    /* 응급: 설교 버튼 가시성 강제 */
-    .ptoolbar .sermBtn { display:inline-flex !important; visibility:visible !important; opacity:1 !important; }
-
-    /* === 절문장 서식 툴바 === */
+    /* 플로팅 서식툴바 */
     #wbp-plbar{
       position: fixed; left:0; top:0;
       transform: translate(-50%, calc(-100% - 10px));
-      background:#0f1320; border:1px solid var(--border, #252a36);
+      background:#0f1320; border:1px solid var(--border);
       border-radius:10px; padding:6px;
       display:flex; gap:6px; align-items:center;
       box-shadow:0 8px 20px rgba(0,0,0,.35); z-index:9999;
     }
     #wbp-plbar[hidden]{ display:none; }
-    #wbp-plbar .divider{ width:1px; height:20px; background:var(--border, #252a36); }
+    #wbp-plbar .divider{ width:1px; height:20px; background:var(--border); }
     #wbp-plbar button{
-      border:1px solid var(--border, #252a36); background:#1f2533; color:#e6e8ef;
+      border:1px solid var(--border); background:#1f2533; color:#e6e8ef;
       padding:6px 8px; border-radius:8px; cursor:pointer; font-weight:700;
     }
     #wbp-plbar button:hover{ background:#273046; }
-    #wbp-plbar input[type="color"]{
-      width:28px; height:28px; padding:0; border:1px solid var(--border, #252a36);
-      background:#1f2533; border-radius:6px; cursor:pointer;
+    #wbp-plbar select{ background:#1f2533; color:#e6e8ef; border:1px solid var(--border); border-radius:6px; padding:4px 6px }
+
+    /* 내용 채워진 버튼(filled) 시각 강조 + 항목별 색 */
+    .ptoolbar button.filled { color:#fff; border-width:1px; box-shadow:0 0 6px rgba(0,0,0,0.25) }
+    .ptoolbar .btnSummary.filled    { background:#6a5acd; border-color:#7b68ee; }
+    .ptoolbar .btnUnitCtx.filled    { background:#9370db; border-color:#b48cf0; }
+    .ptoolbar .btnWholeCtx.filled   { background:#4682b4; border-color:#5ca5e5; }
+    .ptoolbar .btnCommentary.filled { background:#3cb371; border-color:#58d68d; }
+    .ptoolbar .sermBtn.filled       { background:#ff8c00; border-color:#ffa94d; }
+    .ptoolbar button.filled::after{
+      content:"●"; font-size:10px; margin-left:6px; opacity:.85; color:rgba(255,255,255,.9);
     }
-    /* 편집 모드 표시 */
+
+    /* 편집 모드 표시(선택) */
     details.para .pcontent[contenteditable="true"]{
       outline: 1px dashed #3b4b7a; outline-offset: 2px;
     }
-
-    /* ==== 컨텐츠가 채워진 버튼 시각 강조 ==== */
-    .ptoolbar button.filled {
-      background: color-mix(in hsl, var(--accent) 25%, var(--panel) 65%);
-      border-color: var(--accent);
-      box-shadow: 0 0 0 2px color-mix(in hsl, var(--accent) 35%, transparent 65%) inset;
-      color: #fff;
-      border-width: 1px;
-      box-shadow: 0 0 6px rgba(0,0,0,0.25);
-    }
-    .ptoolbar button.filled::after{
-      content: "●";
-      font-size: 10px;
-      margin-left: 6px;
-      opacity: .8;
-      color: rgba(255,255,255,0.85);
-    }
-
-    /* 버튼별 채워짐(filled) 색상 구분 */
-    .ptoolbar .btnSummary.filled    { background:#6a5acd; border-color:#7b68ee; }   /* 내용흐름-보라 */
-    .ptoolbar .btnUnitCtx.filled    { background:#9370db; border-color:#b48cf0; }   /* 단위-연보라 */
-    .ptoolbar .btnWholeCtx.filled   { background:#4682b4; border-color:#5ca5e5; }   /* 전체-파랑 */
-    .ptoolbar .btnCommentary.filled { background:#3cb371; border-color:#58d68d; }   /* 주석-초록 */
-    .ptoolbar .sermBtn.filled       { background:#ff8c00; border-color:#ffa94d; }   /* 설교-주황 */
-
-    .ptoolbar button {
-      transition: background 0.25s ease, border-color 0.25s ease, color 0.25s ease;
-    }
-
-    /* 색상 스와치 버튼 */
-    #wbp-plbar .color-swatch{
-      width:22px; height:22px; border-radius:6px; border:1px solid var(--border, #252a36);
-      display:inline-block; cursor:pointer; outline:none;
-    }
-    #wbp-plbar .color-swatch:focus{ box-shadow:0 0 0 2px rgba(255,255,255,.15) inset; }
-    #wbp-plbar select{
-      height:28px; border-radius:6px; border:1px solid var(--border, #252a36);
-      background:#1f2533; color:#e6e8ef; padding:0 6px; cursor:pointer;
-    }
-
   </style>
 
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600&family=Nanum+Myeongjo&display=swap" rel="stylesheet">
@@ -307,10 +261,10 @@
       <!-- 단일 편집기 -->
       <div class="editor context-editor" id="sermonEditor" style="display:none">
         <div id="rteToolbar" class="editor-bar">
-          <button type="button" onclick="execFmt('bold')"><b>B</b></button>
-          <button type="button" onclick="execFmt('italic')"><i>I</i></button>
-          <button type="button" onclick="execFmt('underline')"><u>U</u></button>
-          <button type="button" onclick="execFmt('strikeThrough')"><s>S</s></button>
+          <button type="button" onclick="document.execCommand('bold',false,null)"><b>B</b></button>
+          <button type="button" onclick="document.execCommand('italic',false,null)"><i>I</i></button>
+          <button type="button" onclick="document.execCommand('underline',false,null)"><u>U</u></button>
+          <button type="button" onclick="document.execCommand('strikeThrough',false,null)"><s>S</s></button>
           <div class="grow"></div>
         </div>
 
@@ -330,559 +284,316 @@
     </div>
   </div>
 
-  <!-- 플로팅 서식툴바: 절(.pline) 선택 시에만 표시 -->
-  <!-- 플로팅 서식툴바: 절(.verse) 선택 시에만 표시 -->
+  <!-- 플로팅 서식툴바(절 선택 시 표시) -->
   <div id="wbp-plbar" hidden role="toolbar" aria-label="절 서식">
     <button type="button" data-cmd="bold" title="굵게 (Ctrl+B)"><b>B</b></button>
     <button type="button" data-cmd="italic" title="기울임 (Ctrl+I)"><i>I</i></button>
     <button type="button" data-cmd="underline" title="밑줄 (Ctrl+U)"><u>U</u></button>
-  
     <div class="divider"></div>
-  
-    <!-- 6가지 고정 색상 스와치 -->
-    <button type="button" class="color-swatch" style="background:#e03131" data-color="#e03131" title="빨강"></button>
-    <button type="button" class="color-swatch" style="background:#f08c00" data-color="#f08c00" title="주황"></button>
-    <button type="button" class="color-swatch" style="background:#fab005" data-color="#fab005" title="노랑"></button>
-    <button type="button" class="color-swatch" style="background:#2f9e44" data-color="#2f9e44" title="초록"></button>
-    <button type="button" class="color-swatch" style="background:#1971c2" data-color="#1971c2" title="파랑"></button>
-    <button type="button" class="color-swatch" style="background:#7048e8" data-color="#7048e8" title="보라"></button>
-  
-    <!-- 기타 색상: 드롭다운 -->
-    <select id="wbp-color-dd" aria-label="기타 색상">
-      <option value="">색 더보기…</option>
-      <option value="#e8590c">오렌지</option>
-      <option value="#e67700">앰버</option>
-      <option value="#5c940d">라임그린</option>
-      <option value="#0ca678">티얼</option>
-      <option value="#1098ad">청록</option>
-      <option value="#4263eb">인디고</option>
-      <option value="#d6336c">딥핑크</option>
-      <option value="#adb5bd">회색</option>
-      <option value="clear">색 제거</option>
-    </select>
-  
-    <button type="button" data-act="clearColor" title="색 제거">⨯</button>
+    <!-- 여기 뒤에 6색 팔레트 + 기타 드롭다운이 JS로 주입됩니다 -->
   </div>
 
+  <!-- 앱 본체 -->
+  <script src="app.js" defer></script>
+
+  <!-- v3.2 코어: 1) 저장소 -->
   <script>
-    (function patchVerseToolbarColors(){
-      const bar  = document.getElementById('wbp-plbar');
-      const dd   = document.getElementById('wbp-color-dd');
-    
-      if(!bar) return;
-    
-      // 공통: 현재 선택에 지정 색 적용
-      function applyColor(color){
-        if(!color) return;
-        // execCommand foreColor 적용
-        document.execCommand('foreColor', false, color);
-        // 저장 훅 (당신 프로젝트의 함수가 이미 있다면 그걸 호출)
-        try{ setTimeout(window.saveCurrentLineFormatting || (()=>{}), 0); }catch(_){}
+  const WBP_FMT_KEY = 'wbps.versefmt.v2';
+  const WBP_FMT = {
+    map: {},
+    load(){
+      try { this.map = JSON.parse(localStorage.getItem(WBP_FMT_KEY) || '{}'); }
+      catch { this.map = {}; }
+    },
+    save(){ localStorage.setItem(WBP_FMT_KEY, JSON.stringify(this.map)); },
+    keyForLine(line){
+      try{
+        const para = line.closest('details.para'); if(!para) return null;
+        const t = para.querySelector('summary .ptitle'); if(!t) return null;
+        const book = t.dataset.book, ch = +t.dataset.ch, idx = +t.dataset.idx;
+        const paraData = window.BIBLE?.books?.[book]?.[ch]?.paras?.[idx]; if(!paraData) return null;
+        const v = line.dataset.verse || line.getAttribute('data-verse'); if(!v) return null;
+        return `${book}|${ch}|${paraData.ref}|v${v}`;
+      }catch{ return null; }
+    },
+    saveLine(line){
+      const k = this.keyForLine(line); if(!k) return;
+      this.map[k] = line.innerHTML;
+      this.save();
+    },
+    restoreLine(line){
+      const k = this.keyForLine(line); if(!k) return;
+      const html = this.map[k];
+      if (html) line.innerHTML = html;
+    },
+    restoreAll(root=document){
+      root.querySelectorAll('.pline, .verse-line, p.verse').forEach(el=>this.restoreLine(el));
+    }
+  };
+  WBP_FMT.load();
+  </script>
+
+  <!-- v3.2 코어: 2) 렌더 완료 복원 + 백업 옵저버 -->
+  <script>
+  // buildTree() 끝에서 app.js가 dispatch 해야 함:
+  // document.dispatchEvent(new CustomEvent('wbp:treeBuilt'));
+  document.addEventListener('wbp:treeBuilt', ()=>{
+    const root = document.getElementById('tree') || document;
+    WBP_FMT.restoreAll(root);
+  });
+
+  // 구형/백업: 트리 내부 DOM 추가 시 새 절 자동 복원
+  (function(){
+    const root = document.getElementById('tree');
+    if(!root) return;
+    // 초기 1회 스윕
+    WBP_FMT.restoreAll(root);
+    const mo = new MutationObserver((muts)=>{
+      for(const m of muts){
+        m.addedNodes?.forEach?.(n=>{
+          if(!(n instanceof HTMLElement)) return;
+          if(n.matches?.('.pline, .verse-line, p.verse')) WBP_FMT.restoreLine(n);
+          n.querySelectorAll?.('.pline, .verse-line, p.verse')?.forEach?.(x=>WBP_FMT.restoreLine(x));
+        });
       }
-    
-      // 스와치 클릭 처리 (data-color)
-      bar.addEventListener('click', (e)=>{
-        const sw = e.target.closest('.color-swatch');
-        if(sw?.dataset?.color){
-          // 선택 복원 시도(당신의 enableVerseToolbar에서 range 저장/복원 중이면 그대로 사용)
-          try{
-            // 이미 restoreSel을 구현하셨다면 실행되고, 없으면 무시
-            window.restoreSel && window.restoreSel();
-          }catch(_){}
-          applyColor(sw.dataset.color);
-        }
+    });
+    mo.observe(root, {subtree:true, childList:true});
+  })();
+  </script>
+
+  <!-- v3.2 코어: 3) 플로팅툴바 표시/적용 즉시 저장 + 6색 팔레트 -->
+  <script>
+  (function enableFloatingToolbar(){
+    const bar = document.getElementById('wbp-plbar');
+    if(!bar) return;
+
+    // 6색 팔레트 + 기타 드롭다운 주입
+    (function injectPalette(){
+      if(bar.querySelector('.wbp-colors')) return;
+      const PALETTE = ['#ff4d4f','#faad14','#fadb14','#52c41a','#1677ff','#722ed1'];
+      const wrap = document.createElement('div');
+      wrap.className = 'wbp-colors';
+      PALETTE.forEach(hex=>{
+        const b = document.createElement('button');
+        b.type='button'; b.title=hex; b.style.cssText=`width:22px;height:22px;border-radius:5px;border:1px solid #2a3040;background:${hex};`;
+        b.addEventListener('click', ()=>{
+          document.execCommand?.('foreColor', false, hex);
+          saveCurrentLine();
+        });
+        wrap.appendChild(b);
       });
-    
-      // 드롭다운 변경 처리
-      dd?.addEventListener('change', ()=>{
-        const val = dd.value;
-        if(!val) return;               // "색 더보기…" (빈 값)
-        if(val === 'clear'){
-          // 색 제거 로직 (inline color를 벗겨냄)
-          try{
-            const sel = window.getSelection(); if(!sel || sel.rangeCount===0) return;
-            const range = sel.getRangeAt(0);
-            const frag  = range.cloneContents();
-            const div   = document.createElement('div'); div.appendChild(frag);
-            div.querySelectorAll('span, font').forEach(n=>{
-              if(n.style?.color) n.style.color = '';
-              if(n.hasAttribute?.('color')) n.removeAttribute('color');
-              if(n.getAttribute?.('style')==='') n.removeAttribute('style');
-            });
-            range.deleteContents();
-            document.execCommand('insertHTML', false, div.innerHTML || div.textContent || '');
-          }catch(_){}
-          try{ setTimeout(window.saveCurrentLineFormatting || (()=>{}), 0); }catch(_){}
-          dd.value = '';               // 초기화
-          return;
-        }
-        // 일반 색상
-        try{ window.restoreSel && window.restoreSel(); }catch(_){}
-        applyColor(val);
-        dd.value = '';                 // 선택 후 초기화
+      const more = document.createElement('select');
+      more.innerHTML = `
+        <option value="">기타 색</option>
+        <option value="#000000">검정</option>
+        <option value="#666666">회색</option>
+        <option value="#ffffff">흰색</option>
+        <option value="#ff69b4">핑크</option>
+        <option value="#00ced1">청록</option>
+      `;
+      more.addEventListener('change', ()=>{
+        if (!more.value) return;
+        document.execCommand?.('foreColor', false, more.value);
+        saveCurrentLine();
+        more.value='';
       });
-    
-      // 기존 바 클릭(굵게/기울임/밑줄) 뒤 저장 훅을 강화
-      bar.addEventListener('click', (e)=>{
-        const btn = e.target.closest('button');
-        if(!btn) return;
-        // 굵게/기울임/밑줄/색제거 등 처리 후 저장
-        setTimeout(()=>{ try{ (window.saveCurrentLineFormatting||(()=>{}))(); }catch(_){}} ,0);
-      });
+      bar.appendChild(wrap);
+      bar.appendChild(more);
     })();
 
-    /* ========= 플로팅 툴바 (굵게/기울임/밑줄/색상) ========= */
-    (function enableVerseToolbar(){
-      const bar = document.getElementById('wbp-plbar');
-      const colorInp = document.getElementById('wbp-plcolor');
-      if(!bar){ console.warn('[WBP] toolbar element #wbp-plbar not found'); return; }
+    // 선택 라인 탐색
+    function currentLineFromSelection(){
+      const sel = window.getSelection?.();
+      if(!sel || !sel.rangeCount) return null;
+      const n = sel.getRangeAt(0).commonAncestorContainer;
+      const el = (n.nodeType===1 ? n : n.parentElement);
+      return el?.closest?.('.pline, .verse-line, p.verse') || null;
+    }
+    function hasRealSelection(){
+      const sel = window.getSelection?.();
+      return !!(sel && sel.rangeCount && !sel.getRangeAt(0).collapsed);
+    }
+    function selRect(){
+      const sel = window.getSelection();
+      if(!sel || sel.rangeCount===0) return null;
+      const r = sel.getRangeAt(0).cloneRange();
+      let rect = r.getBoundingClientRect();
+      if(!rect || (rect.width===0 && rect.height===0)){
+        const span = document.createElement('span');
+        span.appendChild(document.createTextNode('\u200b'));
+        r.insertNode(span);
+        rect = span.getBoundingClientRect();
+        span.remove();
+      }
+      return rect;
+    }
+    let savedRange=null;
+    function saveSel(){ const s=window.getSelection(); if(s&&s.rangeCount>0) savedRange=s.getRangeAt(0).cloneRange(); }
+    function restoreSel(){ if(!savedRange) return false; const s=window.getSelection(); s.removeAllRanges(); s.addRange(savedRange); return true; }
 
-      const LINE_SELECTOR  = '.pline, p.verse, .verse-line';
-      const SCOPE_SELECTOR = '.pcontent, .editor, main, body';
+    function showBarMaybe(){
+      if(!hasRealSelection()){ hide(); return; }
+      const line = currentLineFromSelection();
+      if(!line){ hide(); return; }
+      // contenteditable 보장(필요 시)
+      (line.closest('.pcontent, .editor, main, body')||line).setAttribute('contenteditable','true');
+      const rect = selRect(); if(!rect){ hide(); return; }
+      bar.style.left = (rect.left + rect.width/2) + 'px';
+      bar.style.top  = rect.top + 'px';
+      bar.hidden = false;
+      saveSel();
+    }
+    function hide(){ bar.hidden = true; }
 
-      let savedRange = null;
-
-      function findLineFromSelection(){
-        const sel = window.getSelection();
-        if(!sel || sel.rangeCount===0) return null;
-        const n = sel.getRangeAt(0).commonAncestorContainer;
-        const el = (n.nodeType===1 ? n : n.parentElement);
-        return el?.closest?.(LINE_SELECTOR) || null;
-      }
-      function ensureEditableScope(line){
-        const scope = line.closest(SCOPE_SELECTOR) || line.parentElement || line;
-        if(scope && scope.getAttribute('contenteditable')!=='true'){
-          scope.setAttribute('contenteditable','true');
-        }
-      }
-      function hasRealSelection(){
-        const sel = window.getSelection();
-        return !!(sel && sel.rangeCount && !sel.getRangeAt(0).collapsed);
-      }
-      function saveSel(){
-        const sel = window.getSelection();
-        if(sel && sel.rangeCount>0) savedRange = sel.getRangeAt(0).cloneRange();
-      }
-      function restoreSel(){
-        if(!savedRange) return false;
-        const sel = window.getSelection();
-        sel.removeAllRanges(); sel.addRange(savedRange);
-        return true;
-      }
-      function getSelRect(){
-        const sel = window.getSelection();
-        if(!sel || sel.rangeCount===0) return null;
-        const r = sel.getRangeAt(0).cloneRange();
-        let rect = r.getBoundingClientRect();
-        if(!rect || (rect.width===0 && rect.height===0)){
-          const span = document.createElement('span');
-          span.appendChild(document.createTextNode('\u200b'));
-          r.insertNode(span);
-          rect = span.getBoundingClientRect();
-          span.remove();
-        }
-        return rect;
-      }
-      function showBarIfLine(){
-        if(!hasRealSelection()){ hide(); return; }
-        const line = findLineFromSelection();
-        if(!line){ hide(); return; }
-        ensureEditableScope(line);
-
-        const rect = getSelRect();
-        if(!rect){ hide(); return; }
-
-        bar.style.left = (rect.left + rect.width/2) + 'px';
-        bar.style.top  = rect.top + 'px';
-        bar.hidden = false;
-        saveSel();
-      }
-      function hide(){ bar.hidden = true; }
-
-      bar.addEventListener('mousedown', e=> e.preventDefault());
-      bar.addEventListener('click', e=>{
-        const btn = e.target.closest('button'); if(!btn) return;
+    // 툴바 기본 버튼(B/I/U) → 적용 후 저장
+    bar.addEventListener('mousedown', e=> e.preventDefault());
+    bar.addEventListener('click', e=>{
+      const btn = e.target.closest('button'); if(!btn) return;
+      const cmd = btn.dataset.cmd;
+      if(cmd){
         if(!restoreSel()) return;
-
-        const cmd = btn.dataset.cmd;
-        const act = btn.dataset.act;
-
-        if(cmd){
-          document.execCommand(cmd,false,null);
-          saveSel(); showBarIfLine();
-          setTimeout(saveCurrentLineFormatting, 0);
-          return;
-        }
-        if(act==='clearColor'){
-          try{
-            const sel = window.getSelection(); if(!sel || sel.rangeCount===0) return;
-            const range = sel.getRangeAt(0);
-            const frag  = range.cloneContents();
-            const div   = document.createElement('div'); div.appendChild(frag);
-            div.querySelectorAll('span, font').forEach(n=>{
-              if(n.style?.color) n.style.color = '';
-              if(n.hasAttribute?.('color')) n.removeAttribute('color');
-              if(n.getAttribute?.('style')==='') n.removeAttribute('style');
-            });
-            range.deleteContents();
-            document.execCommand('insertHTML', false, div.innerHTML || div.textContent || '');
-          }catch(_){}
-          saveSel(); showBarIfLine();
-          setTimeout(saveCurrentLineFormatting, 0);
-        }
-      });
-
-      colorInp?.addEventListener('input', ()=>{
-        if(!restoreSel()) return;
-        document.execCommand('foreColor', false, colorInp.value);
-        saveSel(); showBarIfLine();
-        setTimeout(saveCurrentLineFormatting, 0);
-      });
-
-      document.addEventListener('selectionchange', ()=> setTimeout(showBarIfLine, 0));
-      document.addEventListener('mouseup',         ()=> setTimeout(showBarIfLine, 0));
-      document.addEventListener('keyup',           ()=> setTimeout(showBarIfLine, 0));
-      window.addEventListener('scroll', hide, {passive:true});
-      window.addEventListener('resize', hide);
-
-      window.addEventListener('keydown', (e)=>{
-        if(!(e.ctrlKey||e.metaKey)) return;
-        const k = e.key.toLowerCase();
-        if(!['b','i','u'].includes(k)) return;
-        if(!findLineFromSelection()) return;
-        if(!hasRealSelection()) return;
-        e.preventDefault();
-        document.execCommand(k==='b'?'bold':k==='i'?'italic':'underline', false, null);
-        setTimeout(showBarIfLine, 0);
-        setTimeout(saveCurrentLineFormatting, 0);
-      });
-
-      window.addEventListener('keydown', (e)=>{
-        if(e.altKey && e.key.toLowerCase()==='k'){
-          setTimeout(showBarIfLine, 0);
-        }
-      });
-    })();
-
-    /* ========= 버튼 filled-state (요약/단위/전체/주석/설교) ========= */
-    function WBP_safe(fn, fallback){ try{ return fn(); }catch(_){ return fallback; } }
-    function WBP_paraId(book, chap, paraIdx){
-      const para = WBP_safe(()=>BIBLE.books[book][chap].paras[paraIdx], null);
-      if(!para) return null;
-      return `${book}|${chap}|${para.ref}`;
-    }
-    function WBP_pickMetaFromParaEl(paraEl){
-      const t = paraEl.querySelector('summary .ptitle');
-      if(!t) return null;
-      const book = t.dataset.book;
-      const chap = parseInt(t.dataset.ch, 10);
-      const idx  = parseInt(t.dataset.idx, 10);
-      if(!book || !Number.isFinite(chap) || !Number.isFinite(idx)) return null;
-      return {book, chap, idx};
-    }
-    function WBP_hasDoc(map, pid){
-      const doc = (map||{})[pid];
-      if(!doc) return false;
-      const body = (doc.body || '').replace(/\s+/g,'').trim();
-      const title= (doc.title||'').replace(/\s+/g,'').trim();
-      return !!(body || title);
-    }
-    function WBP_hasSermon(sermonMap, pid){
-      const arr = (sermonMap||{})[pid] || [];
-      return Array.isArray(arr) && arr.length > 0 && arr.some(it=>{
-        const title=(it.title||'').replace(/\s+/g,'').trim();
-        const body =(it.body ||'').replace(/\s+/g,'').trim();
-        return !!(title || body);
-      });
-    }
-    function WBP_applyFilledToParaEl(paraEl){
-      const meta = WBP_pickMetaFromParaEl(paraEl);
-      if(!meta) return;
-      const pid = WBP_paraId(meta.book, meta.chap, meta.idx);
-      if(!pid) return;
-
-      const sermonMap = WBP_safe(()=>JSON.parse(localStorage.getItem(STORAGE_SERMON)||'{}'), {});
-      const unitMap   = WBP_safe(()=>JSON.parse(localStorage.getItem(STORAGE_UNIT_CTX)||'{}'), {});
-      const wholeMap  = WBP_safe(()=>JSON.parse(localStorage.getItem(STORAGE_WHOLE_CTX)||'{}'), {});
-      const commMap   = WBP_safe(()=>JSON.parse(localStorage.getItem(STORAGE_COMMENTARY)||'{}'), {});
-      const sumMap    = WBP_safe(()=>JSON.parse(localStorage.getItem(STORAGE_SUMMARY)||'{}'), {});
-
-      const hasSummary    = WBP_hasDoc(sumMap,  pid);
-      const hasUnit       = WBP_hasDoc(unitMap, pid);
-      const hasWhole      = WBP_hasDoc(wholeMap,pid);
-      const hasCommentary = WBP_hasDoc(commMap, pid);
-      const hasSermon     = WBP_hasSermon(sermonMap, pid);
-
-      const tb = paraEl.querySelector('.ptoolbar');
-      if(!tb) return;
-
-      const btnSummary    = tb.querySelector('.btnSummary');
-      const btnUnitCtx    = tb.querySelector('.btnUnitCtx');
-      const btnWholeCtx   = tb.querySelector('.btnWholeCtx');
-      const btnCommentary = tb.querySelector('.btnCommentary');
-      const btnSermon     = tb.querySelector('.sermBtn');
-
-      if(btnSummary)    btnSummary.classList.toggle('filled',    !!hasSummary);
-      if(btnUnitCtx)    btnUnitCtx.classList.toggle('filled',    !!hasUnit);
-      if(btnWholeCtx)   btnWholeCtx.classList.toggle('filled',   !!hasWhole);
-      if(btnCommentary) btnCommentary.classList.toggle('filled', !!hasCommentary);
-      if(btnSermon)     btnSermon.classList.toggle('filled',     !!hasSermon);
-    }
-    function WBP_sweepAll(){
-      document.querySelectorAll('#tree details.para').forEach(WBP_applyFilledToParaEl);
-    }
-    (function(){
-      const root = document.getElementById('tree');
-      if(!root) return;
-      setTimeout(WBP_sweepAll, 200);
-      const mo = new MutationObserver(()=> WBP_sweepAll());
-      mo.observe(root, {subtree:true, childList:true});
-    })();
-    (function wrapSavers(){
-      const _setSermonMap = window.setSermonMap;
-      const _setDocMap    = window.setDocMap;
-      if(typeof _setSermonMap === 'function'){
-        window.setSermonMap = function(o){
-          const r = _setSermonMap.call(this, o);
-          const openPara = document.querySelector('#tree details.para[open]') || null;
-          if(openPara) WBP_applyFilledToParaEl(openPara);
-          setTimeout(WBP_sweepAll, 0);
-          return r;
-        }
+        document.execCommand(cmd,false,null);
+        setTimeout(saveCurrentLine, 0);
+        setTimeout(showBarMaybe, 0);
       }
-      if(typeof _setDocMap === 'function'){
-        window.setDocMap = function(key, obj){
-          const r = _setDocMap.call(this, key, obj);
-          const openPara = document.querySelector('#tree details.para[open]') || null;
-          if(openPara) WBP_applyFilledToParaEl(openPara);
-          setTimeout(WBP_sweepAll, 0);
-          return r;
-        }
-      }
-    })();
-    document.getElementById('tree')?.addEventListener('toggle', (e)=>{
-      const para = e.target?.closest?.('details.para');
-      if(para && para.open){ WBP_applyFilledToParaEl(para); }
-    }, true);
-    window.addEventListener('keydown', (e)=>{
-      if(e.altKey && e.key.toLowerCase()==='l'){ WBP_sweepAll(); }
     });
 
-    /* ========= 절 서식 영구 보존 ========= */
-    const STORAGE_VERSE_FMT = 'wbps.versefmt.v1';
+    // 단축키(B/I/U) 후 저장
+    document.addEventListener('keydown', (e)=>{
+      if(!(e.ctrlKey||e.metaKey)) return;
+      const k = e.key?.toLowerCase();
+      if(!['b','i','u'].includes(k)) return;
+      setTimeout(saveCurrentLine, 0);
+    });
+    // 입력/마우스업에도 저장
+    document.addEventListener('input', ()=> setTimeout(saveCurrentLine, 120));
+    document.addEventListener('mouseup', ()=> setTimeout(showBarMaybe, 0));
+    document.addEventListener('selectionchange', ()=> setTimeout(showBarMaybe, 0));
+    window.addEventListener('scroll', hide, {passive:true});
+    window.addEventListener('resize', hide);
 
-    function getVerseFmtMap(){
-      try{ return JSON.parse(localStorage.getItem(STORAGE_VERSE_FMT) || '{}'); }
-      catch{ return {}; }
+    function saveCurrentLine(){
+      const line = currentLineFromSelection(); if(!line) return;
+      WBP_FMT.saveLine(line);
     }
-    function setVerseFmtMap(obj){
-      localStorage.setItem(STORAGE_VERSE_FMT, JSON.stringify(obj));
-    }
-    
-    // ✅ 교체본: verse 번호가 없을 때 ‘단락 내 n번째 라인’으로 fallback
-    function keyForPline(plineEl){
-      try{
-        const paraEl = plineEl.closest('details.para');
-        if(!paraEl) return null;
-    
-        const t = paraEl.querySelector('summary .ptitle');
-        if(!t) return null;
-    
-        const book = t.dataset.book;
-        const chap = parseInt(t.dataset.ch, 10);
-        const idx  = parseInt(t.dataset.idx, 10);
-    
-        const para = (window.BIBLE?.books?.[book]?.[chap]?.paras || [])[idx];
-        if(!para) return null;
-    
-        // 1) 우선 data-verse → 2) sup 안의 숫자 → 3) 형제 index
-        let v = plineEl.dataset.verse;
-        if(!v){
-          const sup = plineEl.querySelector('sup');
-          if(sup && /^\d+$/.test(sup.textContent.trim())) {
-            v = sup.textContent.trim();
-          }
-        }
-        if(!v){
-          // 단락 내 .pline 순번으로 fallback
-          const siblings = Array.from(paraEl.querySelectorAll('.pline, .verse-line, p.verse'));
-          const i = Math.max(0, siblings.indexOf(plineEl)); // 0-based
-          v = `i${i}`; // ex) v=i0, i1 …
-        }
-    
-        return `${book}|${chap}|${para.ref}|v${v}`;
-      }catch(_){
-        return null;
-      }
-    }
+  })();
+  </script>
 
-    function saveCurrentLineFormatting(){
-      const sel = window.getSelection?.();
-      if(!sel || !sel.rangeCount) return;
-      const n = sel.getRangeAt(0).commonAncestorContainer;
-      const el = (n.nodeType === 1 ? n : n.parentElement);
-      const line = el?.closest?.('.pline, .verse-line, p.verse');
-      if(!line) return;
-      const key = keyForPline(line);
-      if(!key) return;
-      const map = getVerseFmtMap();
-      map[key] = line.innerHTML;
-      setVerseFmtMap(map);
+  <!-- v3.2 코어: 4) 단락 서식 초기화 버튼 + filled 상태 토글 -->
+  <script>
+  // 버튼 filled 상태 갱신(내용흐름/단위/전체/주석/설교)
+  (function filledStatePatch(){
+    function safe(fn, fb){ try{ return fn(); }catch{ return fb; } }
+    function paraId(book, chap, idx){
+      const para = safe(()=>BIBLE.books[book][chap].paras[idx], null);
+      return para ? `${book}|${chap}|${para.ref}` : null;
     }
-    function restoreLineFormatting(line){
-      const key = keyForPline(line);
-      if(!key) return;
-      const map = getVerseFmtMap();
-      if(map[key]){ line.innerHTML = map[key]; }
+    function pickMeta(paraEl){
+      const t = paraEl.querySelector('summary .ptitle'); if(!t) return null;
+      return { book:t.dataset.book, chap:+t.dataset.ch, idx:+t.dataset.idx };
     }
-    
-    // ✅ 교체본: 초기 렌더 완료를 ‘정말로’ 기다렸다가 1회 복원 + 이후에도 변경 감지
-    (function watchTreeForNewLines(){
-      const root = document.getElementById('tree');
-      if(!root) return;
-    
-      let rafId = null;
-      let pending = false;
-    
-      function batchRestore(){
-        if(pending) return;
-        pending = true;
-        // 렌더가 연속으로 들어오면 한 프레임 뒤에 합쳐서 복원
-        rafId && cancelAnimationFrame(rafId);
-        rafId = requestAnimationFrame(()=>{
-          // 현재 화면에 있는 모든 라인 복원
-          root.querySelectorAll('.pline, .verse-line, p.verse').forEach(restoreLineFormatting);
-          pending = false;
-        });
-      }
-    
-      // 1) 최초: 트리가 비어있다가 채워지는 시점까지 확실히 대기
-      const startWait = new MutationObserver(()=>{
-        if(root.querySelector('.pline, .verse-line, p.verse')) {
-          batchRestore();
-          startWait.disconnect();
-        }
-      });
-      startWait.observe(root, {subtree:true, childList:true});
-    
-      // 2) 이후: 어떤 재렌더/추가/치환에도 곧바로 재복원
-      const mo = new MutationObserver((muts)=>{
-        for(const m of muts){
-          if(m.type === 'childList'){
-            if(m.addedNodes && m.addedNodes.length){
-              batchRestore();
-              break;
-            }
-          }
-          if(m.type === 'characterData'){
-            batchRestore();
-            break;
-          }
-        }
-      });
-      mo.observe(root, {
-        subtree: true,
-        childList: true,
-        characterData: true
-      });
-    
-      // 3) DOMContentLoaded 이후에도 한 번 더 안전복원 (직접 호출해도 무해)
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', batchRestore, {once:true});
-      } else {
-        batchRestore();
-      }
+    function hasDoc(map, pid){
+      const d=(map||{})[pid]; if(!d) return false;
+      const b=(d.body||'').replace(/\s+/g,''); const ti=(d.title||'').replace(/\s+/g,'');
+      return !!(b||ti);
+    }
+    function hasSermon(sermonMap, pid){
+      const arr=(sermonMap||{})[pid]||[]; if(!Array.isArray(arr)||arr.length===0) return false;
+      return arr.some(it=> (it.body||'').replace(/\s+/g,'') || (it.title||'').replace(/\s+/g,''));
+    }
+    function applyFilled(paraEl){
+      const m = pickMeta(paraEl); if(!m) return;
+      const pid = paraId(m.book, m.chap, m.idx); if(!pid) return;
+
+      const sermonMap = safe(()=>JSON.parse(localStorage.getItem(STORAGE_SERMON)||'{}'),{});
+      const unitMap   = safe(()=>JSON.parse(localStorage.getItem(STORAGE_UNIT_CTX)||'{}'),{});
+      const wholeMap  = safe(()=>JSON.parse(localStorage.getItem(STORAGE_WHOLE_CTX)||'{}'),{});
+      const commMap   = safe(()=>JSON.parse(localStorage.getItem(STORAGE_COMMENTARY)||'{}'),{});
+      const sumMap    = safe(()=>JSON.parse(localStorage.getItem(STORAGE_SUMMARY)||'{}'),{});
+
+      const tb = paraEl.querySelector('.ptoolbar'); if(!tb) return;
+      const q = s=>tb.querySelector(s);
+
+      q('.btnSummary')   ?.classList.toggle('filled', hasDoc(sumMap,  pid));
+      q('.btnUnitCtx')   ?.classList.toggle('filled', hasDoc(unitMap, pid));
+      q('.btnWholeCtx')  ?.classList.toggle('filled', hasDoc(wholeMap,pid));
+      q('.btnCommentary')?.classList.toggle('filled', hasDoc(commMap, pid));
+      q('.sermBtn')      ?.classList.toggle('filled', hasSermon(sermonMap, pid));
+    }
+    function sweep(){ document.querySelectorAll('#tree details.para').forEach(applyFilled); }
+
+    // buildTree 이후 갱신
+    document.addEventListener('wbp:treeBuilt', sweep);
+    // 구조 변동 시 갱신
+    (function(){
+      const root=document.getElementById('tree'); if(!root) return;
+      setTimeout(sweep, 200);
+      new MutationObserver(()=>sweep()).observe(root, {subtree:true, childList:true});
     })();
+  })();
 
-    
-    (function hookToolbarSaves(){
-      const bar = document.getElementById('wbp-plbar');
-      const color = document.getElementById('wbp-plcolor');
-      if(bar){
-        bar.addEventListener('click', (e)=>{
-          const btn = e.target.closest('button');
-          if(!btn) return;
-          setTimeout(saveCurrentLineFormatting, 0);
-        });
-      }
-      if(color){
-        color.addEventListener('input', ()=>{
-          setTimeout(saveCurrentLineFormatting, 0);
-        });
-      }
-      document.addEventListener('keyup',  ()=> setTimeout(saveCurrentLineFormatting, 0));
-      document.addEventListener('mouseup',()=> setTimeout(saveCurrentLineFormatting, 0));
-    })();
-
-    /* ========= 특정 단락 서식 초기화 버튼 주입 ========= */
+  // 단락 서식초기화 버튼 자동 삽입
+  (function injectParaClearButton(){
     function metaFromParaEl(paraEl){
-      const t = paraEl.querySelector('summary .ptitle');
-      if(!t) return null;
-      const book = t.dataset.book;
-      const chap = parseInt(t.dataset.ch,10);
-      const idx  = parseInt(t.dataset.idx,10);
-      if(!book || !Number.isFinite(chap) || !Number.isFinite(idx)) return null;
+      const t = paraEl.querySelector('summary .ptitle'); if(!t) return null;
+      const book=t.dataset.book, chap=+t.dataset.ch, idx=+t.dataset.idx;
+      if(!book||!Number.isFinite(chap)||!Number.isFinite(idx)) return null;
       return {book,chap,idx};
     }
     function clearFormattingForPara(paraEl){
-      const meta = metaFromParaEl(paraEl);
-      if(!meta) return alert('단락 정보를 찾을 수 없습니다.');
-      const para = window.BIBLE?.books?.[meta.book]?.[meta.chap]?.paras?.[meta.idx];
-      if(!para) return alert('성경 본문 데이터가 없습니다.');
+      const m = metaFromParaEl(paraEl); if(!m) return alert('단락 정보를 찾을 수 없습니다.');
+      const para = window.BIBLE?.books?.[m.book]?.[m.chap]?.paras?.[m.idx]; if(!para) return alert('성경 본문 데이터가 없습니다.');
 
-      const prefix = `${meta.book}|${meta.chap}|${para.ref}|`;
-      const map = getVerseFmtMap();
-      const newMap = {};
+      const prefix = `${m.book}|${m.chap}|${para.ref}|`;
+      const map = {...WBP_FMT.map};
       let count = 0;
-      for(const [k,v] of Object.entries(map)){
-        if(k.startsWith(prefix)) { count++; continue; }
-        newMap[k]=v;
+      for(const k of Object.keys(map)){
+        if(k.startsWith(prefix)){ delete map[k]; count++; }
       }
-      setVerseFmtMap(newMap);
+      WBP_FMT.map = map; WBP_FMT.save();
 
+      // DOM 복원(원문으로)
       paraEl.querySelectorAll('.pline, .verse-line, p.verse').forEach(line=>{
-        const textOnly = line.textContent.trim();
-        if(textOnly){ line.innerHTML = textOnly; }
+        const sup = line.querySelector('sup')?.outerHTML || '';
+        const text = line.textContent.replace(/^\s*\d+\s*/, '').trim();
+        line.innerHTML = sup + (text || '');
       });
 
-      alert(`'${meta.book} ${meta.chap}장 (${para.ref})' 단락의 서식 ${count}개를 초기화했습니다.`);
+      alert(`이 단락의 절 서식 ${count}개를 초기화했습니다.`);
     }
-    (function injectClearBtn(){
-      const root = document.getElementById('tree');
-      if(!root) return;
-      const addBtn = (tb, paraEl)=>{
-        if(tb.querySelector('.btnClearFmt')) return;
-        const btn = document.createElement('button');
-        btn.className = 'btnClearFmt';
-        btn.textContent = '서식초기화';
-        btn.title = '이 단락 안의 굵게/기울임/밑줄/색상 서식을 초기화합니다.';
-        btn.style.background = '#552222';
-        btn.style.color = '#fff';
-        btn.style.border = '1px solid #aa4444';
-        btn.style.borderRadius = '8px';
-        btn.addEventListener('click', ()=> clearFormattingForPara(paraEl));
-        tb.appendChild(btn);
-      };
-      root.querySelectorAll('details.para').forEach(paraEl=>{
-        const tb = paraEl.querySelector('.ptoolbar');
-        if(tb) addBtn(tb, paraEl);
-      });
-      const mo = new MutationObserver((muts)=>{
-        for(const m of muts){
-          m.addedNodes?.forEach?.(n=>{
-            if(!(n instanceof HTMLElement)) return;
-            const paraEl = n.matches?.('details.para') ? n : n.closest?.('details.para');
-            const tb = paraEl?.querySelector?.('.ptoolbar');
-            if(paraEl && tb) addBtn(tb, paraEl);
-          });
-        }
-      });
-      mo.observe(root, {subtree:true, childList:true});
-    })();
-  </script>
 
-  <!-- 기존 앱 스크립트는 마지막에 둡니다 (defer) -->
-  <script src="app.js" defer></script>
+    function addBtn(tb, paraEl){
+      if(tb.querySelector('.btnClearFmt')) return;
+      const btn = document.createElement('button');
+      btn.className = 'btnClearFmt';
+      btn.textContent = '서식초기화';
+      btn.title = '이 단락 안의 굵게/기울임/밑줄/색상 서식을 초기화합니다.';
+      btn.style.background = '#552222';
+      btn.style.color = '#fff';
+      btn.style.border = '1px solid #aa4444';
+      btn.style.borderRadius = '8px';
+      btn.addEventListener('click', ()=> clearFormattingForPara(paraEl));
+      tb.appendChild(btn);
+    }
+
+    const root = document.getElementById('tree'); if(!root) return;
+    // 초기
+    root.querySelectorAll('details.para').forEach(paraEl=>{
+      const tb=paraEl.querySelector('.ptoolbar'); if(tb) addBtn(tb, paraEl);
+    });
+    // 이후 추가되는 단락도 주입
+    new MutationObserver((muts)=>{
+      for(const m of muts){
+        m.addedNodes?.forEach?.(n=>{
+          if(!(n instanceof HTMLElement)) return;
+          const paraEl = n.matches?.('details.para') ? n : n.closest?.('details.para');
+          const tb = paraEl?.querySelector?.('.ptoolbar');
+          if(paraEl && tb) addBtn(tb, paraEl);
+        });
+      }
+    }).observe(root, {subtree:true, childList:true});
+  })();
+  </script>
 
 </body>
 </html>
